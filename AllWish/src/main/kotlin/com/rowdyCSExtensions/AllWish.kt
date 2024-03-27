@@ -8,6 +8,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.utils.Qualities
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
@@ -17,7 +18,7 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
     override var supportedTypes = setOf(TvType.Anime, TvType.AnimeMovie, TvType.OVA)
     override var lang = "en"
     override val hasMainPage = true
-    override val hasQuickSearch = false
+    override val hasQuickSearch = true
 
     val mapper = jacksonObjectMapper()
     var sectionNamesList: List<String> = emptyList()
@@ -29,10 +30,11 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
 
     override val mainPage =
             mainPageOf(
-                    "$mainUrl/filter?&type=Latest+Updated&language=sub&sort=default&page=" to
-                            "Latest Updated (Sub)",
-                    "$mainUrl/filter?&type=Latest+Updated&language=dub&sort=default&page=" to
-                            "Latest Updated (Dub)"
+                    "$mainUrl/ajax/home/widget/trending?page=" to "Trending",
+                    "$mainUrl/ajax/home/widget/updated-sub?page=" to "Recently Updated (Sub)",
+                    "$mainUrl/ajax/home/widget/updated-dub?page=" to "Recently Updated (Dub)",
+                    "$mainUrl/ajax/home/widget/hindi-dub?page=" to "Recently Updated (Hindi)",
+                    "$mainUrl/ajax/home/widget/updated-china?page=" to "Recently Updated (Chinese)"
             )
 
     private fun searchResponseBuilder(res: Document): List<AnimeSearchResponse> {
@@ -49,10 +51,21 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
         return results
     }
 
+    override suspend fun quickSearch(query: String): List<AnimeSearchResponse> {
+        return search(query)
+    }
+
+    override suspend fun search(query: String): List<AnimeSearchResponse> {
+        val res = app.get("$mainUrl/filter?keyword=$query").document
+        return searchResponseBuilder(res)
+    }
+
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        val res = app.get(request.data + page.toString()).document
-        val searchRes = searchResponseBuilder(res)
-        return newHomePageResponse(request.name, searchRes, true)
+        val res = app.get(request.data + page.toString(), AllWish.header).parsedSafe<APIResponse>()
+        if (res?.status == 200) {
+            val searchRes = searchResponseBuilder(res.html)
+            return newHomePageResponse(request.name, searchRes, true)
+        } else return null
     }
 
     override suspend fun load(url: String): LoadResponse {
@@ -62,20 +75,30 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
         val name = data?.selectFirst("h1.title")?.text()?.trim()?.replace(" (Dub)", "") ?: ""
         val posterRegex = Regex("/'(.*)'/gm")
 
-        var episodes = emptyList<Episode>()
+        var subEpisodes = emptyList<Episode>()
+        var dubEpisodes = emptyList<Episode>()
 
         val epRes =
                 app.get("$mainUrl/ajax/episode/list/$id", AllWish.header).parsedSafe<APIResponse>()
         if (epRes?.status == 200) {
             epRes.html.select("div.range > div > a").forEach { ep ->
                 val epId = ep.attr("data-ids")
-                episodes +=
-                        newEpisode(epId) { this.episode = ep.attr("data-num").toFloat().toInt() }
+                if (ep.attr("data-sub").equals("1"))
+                        subEpisodes +=
+                                newEpisode("sub|" + epId) {
+                                    this.episode = ep.attr("data-num").toFloat().toInt()
+                                }
+                if (ep.attr("data-dub").equals("1"))
+                        dubEpisodes +=
+                                newEpisode("softsub,dub|" + epId) {
+                                    this.episode = ep.attr("data-num").toFloat().toInt()
+                                }
             }
         }
 
         return newAnimeLoadResponse(name, url, TvType.Anime) {
-            addEpisodes(DubStatus.Subbed, episodes)
+            addEpisodes(DubStatus.Subbed, subEpisodes)
+            addEpisodes(DubStatus.Dubbed, dubEpisodes)
             this.plot = data?.selectFirst("div.description > div.full > div")?.text()?.trim()
             this.backgroundPosterUrl =
                     posterRegex
@@ -98,30 +121,35 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val id = data.replace(mainUrl + "/", "")
+        val type = data.replace(mainUrl + "/", "").split("|")[0]
+        val id = data.replace(mainUrl + "/", "").split("|")[1]
         val res =
                 app.get("$mainUrl/ajax/server/list?servers=$id", AllWish.header)
                         .parsedSafe<APIResponse>()
         if (res?.status == 200) {
-            res.html.select("div.server-list > div.server").forEach { server ->
-                val serverName = server.selectFirst("div > span")?.text() ?: ""
-                val dataId = server.attr("data-link-id")
-                val links = AllWishExtractor().getStreamUrl(serverName, dataId)
-                if (links.isNotEmpty()) {
-                    links.forEach { link ->
-                        callback.invoke(
-                                ExtractorLink(
-                                        serverName,
-                                        serverName,
-                                        link,
-                                        "",
-                                        0,
-                                        link.contains(".m3u8")
+            res.html
+                    .select("div.server-type")
+                    .find { type.contains(it.attr("data-type")) }
+                    ?.select("div.server-list > div.server")
+                    ?.forEach { server ->
+                        val serverName = server.selectFirst("div > span")?.text() ?: ""
+                        val dataId = server.attr("data-link-id")
+                        val links = AllWishExtractor().getStreamUrl(serverName, dataId)
+                        if (links.isNotEmpty()) {
+                            links.forEach { link ->
+                                callback.invoke(
+                                        ExtractorLink(
+                                                serverName,
+                                                serverName,
+                                                link,
+                                                "",
+                                                Qualities.Unknown.value,
+                                                link.contains(".m3u8")
+                                        )
                                 )
-                        )
+                            }
+                        }
                     }
-                }
-            }
         }
         return true
     }
