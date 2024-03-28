@@ -413,7 +413,7 @@ class AnitakuProvider : MainAPI() {
         when(sId) {
             "streamwish" -> return "Streamwish"
             "filelions" -> return "FileLions"
-            "anime" -> return "Vidstream"
+            "anime" -> return "Vidstreaming"
         }
         return ""
     }

@@ -6,7 +6,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
 }
 // use an integer for version numbers
-version = 9
+version = 10
 
 
 cloudstream {
@@ -30,7 +30,7 @@ cloudstream {
     language = "en"
 
     // random cc logo i found
-    iconUrl = "https://mangadex.org/img/brand/mangadex-logo.svg"
+    iconUrl = "https://raw.githubusercontent.com/Rowdy-Avocado/Rowdycado-Extensions/master/logos/mangadex.png"
 }
 
 android {

@@ -2,6 +2,7 @@ package com.RowdyAvocado
 
 // import android.util.Log
 
+import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.lagradost.cloudstream3.*
@@ -18,14 +19,14 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
     override var supportedTypes = setOf(TvType.Anime, TvType.AnimeMovie, TvType.OVA)
     override var lang = "en"
     override val hasMainPage = true
-    override val hasQuickSearch = true
 
     val mapper = jacksonObjectMapper()
     var sectionNamesList: List<String> = emptyList()
 
     companion object {
         val mainUrl = "https://all-wish.me"
-        val header = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val xmlHeader = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val refHeader = mapOf("Referer" to mainUrl)
     }
 
     override val mainPage =
@@ -51,17 +52,14 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
         return results
     }
 
-    override suspend fun quickSearch(query: String): List<AnimeSearchResponse> {
-        return search(query)
-    }
-
     override suspend fun search(query: String): List<AnimeSearchResponse> {
         val res = app.get("$mainUrl/filter?keyword=$query").document
         return searchResponseBuilder(res)
     }
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        val res = app.get(request.data + page.toString(), AllWish.header).parsedSafe<APIResponse>()
+        val res =
+                app.get(request.data + page.toString(), AllWish.xmlHeader).parsedSafe<APIResponse>()
         if (res?.status == 200) {
             val searchRes = searchResponseBuilder(res.html)
             return newHomePageResponse(request.name, searchRes, true)
@@ -79,7 +77,8 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
         var dubEpisodes = emptyList<Episode>()
 
         val epRes =
-                app.get("$mainUrl/ajax/episode/list/$id", AllWish.header).parsedSafe<APIResponse>()
+                app.get("$mainUrl/ajax/episode/list/$id", AllWish.xmlHeader)
+                        .parsedSafe<APIResponse>()
         if (epRes?.status == 200) {
             epRes.html.select("div.range > div > a").forEach { ep ->
                 val epId = ep.attr("data-ids")
@@ -90,7 +89,7 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
                                 }
                 if (ep.attr("data-dub").equals("1"))
                         dubEpisodes +=
-                                newEpisode("softsub-dub|" + epId) {
+                                newEpisode("softsub,dub|" + epId) {
                                     this.episode = ep.attr("data-num").toFloat().toInt()
                                 }
             }
@@ -121,13 +120,16 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val type = data.replace(mainUrl + "/", "").split("|")[0]
+        val type = data.replace(mainUrl + "/", "").split("|")[0].split(",")
         val id = data.replace(mainUrl + "/", "").split("|")[1]
         val res =
-                app.get("$mainUrl/ajax/server/list?servers=$id", AllWish.header)
+                app.get("$mainUrl/ajax/server/list?servers=$id", AllWish.xmlHeader)
                         .parsedSafe<APIResponse>()
         if (res?.status == 200) {
             res.html.select("div.server-type").forEach { section ->
+                Log.d("rowdy", section.attr("data-type"))
+                Log.d("rowdy", type.toString())
+                Log.d("rowdy", type.contains(section.attr("data-type")).toString())
                 if (type.contains(section.attr("data-type"))) {
                     section.select("div.server-list > div.server").forEach { server ->
                         val serverName = server.selectFirst("div > span")?.text() ?: ""
