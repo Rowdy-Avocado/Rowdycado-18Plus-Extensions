@@ -41,7 +41,7 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
         var results = emptyList<AnimeSearchResponse>()
         res.select("div.item").forEach { item ->
             val name = item.selectFirst("div.name > a")?.text() ?: ""
-            val url = item.selectFirst("div.name > a")?.attr("href") ?: ""
+            val url = item.selectFirst("div.name > a")?.attr("href")?.substringBeforeLast("/") ?: ""
             results +=
                     newAnimeSearchResponse(name, url) {
                         this.posterUrl = item.selectFirst("a.poster img")?.attr("data-src")
@@ -90,7 +90,7 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
                                 }
                 if (ep.attr("data-dub").equals("1"))
                         dubEpisodes +=
-                                newEpisode("softsub,dub|" + epId) {
+                                newEpisode("softsub-dub|" + epId) {
                                     this.episode = ep.attr("data-num").toFloat().toInt()
                                 }
             }
@@ -127,11 +127,9 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
                 app.get("$mainUrl/ajax/server/list?servers=$id", AllWish.header)
                         .parsedSafe<APIResponse>()
         if (res?.status == 200) {
-            res.html
-                    .select("div.server-type")
-                    .find { type.contains(it.attr("data-type")) }
-                    ?.select("div.server-list > div.server")
-                    ?.forEach { server ->
+            res.html.select("div.server-type").forEach { section ->
+                if (type.contains(section.attr("data-type"))) {
+                    section.select("div.server-list > div.server").forEach { server ->
                         val serverName = server.selectFirst("div > span")?.text() ?: ""
                         val dataId = server.attr("data-link-id")
                         val links = AllWishExtractor().getStreamUrl(serverName, dataId)
@@ -150,6 +148,8 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
                             }
                         }
                     }
+                }
+            }
         }
         return true
     }

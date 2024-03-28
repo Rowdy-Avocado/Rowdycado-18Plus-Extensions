@@ -1,6 +1,5 @@
 package com.RowdyAvocado
 
-import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.app
 
@@ -22,9 +21,8 @@ class AllWishExtractor {
                         val doc = serverRes.document
                         val script =
                                 doc.selectFirst("script:containsData(sources)")?.data().toString()
-                        Regex("file:\"(.*?)\"").find(script)?.groupValues?.get(1)?.let { link ->
-                            Log.d("rowdyLink", link)
-                            links += link
+                        Regex("file:\"(.*?)\"").find(script)?.groupValues?.get(1)?.let {
+                            links += it
                         }
                     }
                 }
@@ -37,7 +35,6 @@ class AllWishExtractor {
                 "Filelions" -> {
                     links += serverUrl
                 }
-                else -> Log.d("rowdy", "no match")
             }
         }
         return links.toList()
