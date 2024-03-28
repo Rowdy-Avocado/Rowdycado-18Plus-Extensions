@@ -14,11 +14,7 @@ class AllWishExtractor {
         if (!serverUrl.isNullOrEmpty()) {
             when (serverName) {
                 "VidPlay" -> {
-                    val tempRes =
-                            app.get(
-                                    "https://cdn.animixplay.tube/player/?id=6f72652d64616b652d6c6576656c2d75702d6e612d6b656e2d657069736f64652d31&autostart=true",
-                                    headers = AllWish.refHeader
-                            )
+                    val tempRes = app.get(serverUrl, headers = AllWish.refHeader)
                     val encryptedSource = tempRes.url.substringAfterLast("?data=#")
                     if (encryptedSource.isNotBlank()) {
                         links +=
