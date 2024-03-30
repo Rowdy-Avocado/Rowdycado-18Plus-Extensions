@@ -1,24 +1,26 @@
 package com.KillerDogeEmpire
 
+import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.mvvm.normalSafeApiCall
-import com.lagradost.cloudstream3.mvvm.safeApiCall
-import com.lagradost.cloudstream3.utils.AppUtils
+import com.lagradost.cloudstream3.extractors.helper.GogoHelper
+import com.lagradost.cloudstream3.extractors.StreamWishExtractor
+import com.lagradost.cloudstream3.utils.getPacked
+import com.lagradost.cloudstream3.utils.getAndUnpack
+import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
+import com.lagradost.cloudstream3.extractors.Filesim
+import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
-import com.lagradost.cloudstream3.utils.getQualityFromName
-import com.lagradost.cloudstream3.utils.loadExtractor
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import java.net.URI
-import java.util.*
-import javax.crypto.Cipher
-import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.SecretKeySpec
 import com.lagradost.cloudstream3.utils.Qualities
+import com.lagradost.cloudstream3.utils.loadExtractor
+import java.util.*
+import org.jsoup.Jsoup
 
 class AnitakuProvider : MainAPI() {
     companion object {
+        val mainUrl = "https://anitaku.to"
+        val name = "Anitaku"
+
         fun getType(t: String): TvType {
             return if (t.contains("OVA") || t.contains("Special")) TvType.OVA
             else if (t.contains("Movie")) TvType.AnimeMovie
@@ -32,144 +34,10 @@ class AnitakuProvider : MainAPI() {
                 else -> ShowStatus.Completed
             }
         }
-
-        /**
-         * @param id base64Decode(show_id) + IV
-         * @return the encryption key
-         * */
-        private fun getKey(id: String): String? {
-            return normalSafeApiCall {
-                id.map {
-                    it.code.toString(16)
-                }.joinToString("").substring(0, 32)
-            }
-        }
-
-        val qualityRegex = Regex("(\\d+)P")
-
-        // https://github.com/saikou-app/saikou/blob/3e756bd8e876ad7a9318b17110526880525a5cd3/app/src/main/java/ani/saikou/anime/source/extractors/GogoCDN.kt#L60
-        // No Licence on the function
-        private fun cryptoHandler(
-            string: String,
-            iv: String,
-            secretKeyString: String,
-            encrypt: Boolean = true
-        ): String {
-            //println("IV: $iv, Key: $secretKeyString, encrypt: $encrypt, Message: $string")
-            val ivParameterSpec = IvParameterSpec(iv.toByteArray())
-            val secretKey = SecretKeySpec(secretKeyString.toByteArray(), "AES")
-            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-            return if (!encrypt) {
-                cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec)
-                String(cipher.doFinal(base64DecodeArray(string)))
-            } else {
-                cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec)
-                base64Encode(cipher.doFinal(string.toByteArray()))
-            }
-        }
-
-        private fun String.decodeHex(): ByteArray {
-            check(length % 2 == 0) { "Must have an even length" }
-            return chunked(2)
-                .map { it.toInt(16).toByte() }
-                .toByteArray()
-        }
-
-        /**
-         * @param iframeUrl something like https://gogoplay4.com/streaming.php?id=XXXXXX
-         * @param mainApiName used for ExtractorLink names and source
-         * @param iv secret iv from site, required non-null if isUsingAdaptiveKeys is off
-         * @param secretKey secret key for decryption from site, required non-null if isUsingAdaptiveKeys is off
-         * @param secretDecryptKey secret key to decrypt the response json, required non-null if isUsingAdaptiveKeys is off
-         * @param isUsingAdaptiveKeys generates keys from IV and ID, see getKey()
-         * @param isUsingAdaptiveData generate encrypt-ajax data based on $("script[data-name='episode']")[0].dataset.value
-         * */
-        suspend fun extractVidstream(
-            iframeUrl: String,
-            mainApiName: String,
-            callback: (ExtractorLink) -> Unit,
-            iv: String?,
-            secretKey: String?,
-            secretDecryptKey: String?,
-            // This could be removed, but i prefer it verbose
-            isUsingAdaptiveKeys: Boolean,
-            isUsingAdaptiveData: Boolean,
-            // If you don't want to re-fetch the document
-            iframeDocument: Document? = null
-        ) = safeApiCall {
-            // https://github.com/saikou-app/saikou/blob/3e756bd8e876ad7a9318b17110526880525a5cd3/app/src/main/java/ani/saikou/anime/source/extractors/GogoCDN.kt
-            // No Licence on the following code
-            // Also modified of https://github.com/jmir1/aniyomi-extensions/blob/master/src/en/gogoanime/src/eu/kanade/tachiyomi/animeextension/en/gogoanime/extractors/GogoCdnExtractor.kt
-            // License on the code above  https://github.com/jmir1/aniyomi-extensions/blob/master/LICENSE
-
-            if ((iv == null || secretKey == null || secretDecryptKey == null) && !isUsingAdaptiveKeys)
-                return@safeApiCall
-
-            val id = Regex("id=([^&]+)").find(iframeUrl)!!.value.removePrefix("id=")
-
-            var document: Document? = iframeDocument
-            val foundIv =
-                iv ?: (document ?: app.get(iframeUrl).document.also { document = it })
-                    .select("""div.wrapper[class*=container]""")
-                    .attr("class").split("-").lastOrNull() ?: return@safeApiCall
-            val foundKey = secretKey ?: getKey(base64Decode(id) + foundIv) ?: return@safeApiCall
-            val foundDecryptKey = secretDecryptKey ?: foundKey
-
-            val uri = URI(iframeUrl)
-            val mainUrl = "https://" + uri.host
-
-            val encryptedId = cryptoHandler(id, foundIv, foundKey)
-            val encryptRequestData = if (isUsingAdaptiveData) {
-                // Only fetch the document if necessary
-                val realDocument = document ?: app.get(iframeUrl).document
-                val dataEncrypted =
-                    realDocument.select("script[data-name='episode']").attr("data-value")
-                val headers = cryptoHandler(dataEncrypted, foundIv, foundKey, false)
-                "id=$encryptedId&alias=$id&" + headers.substringAfter("&")
-            } else {
-                "id=$encryptedId&alias=$id"
-            }
-
-            val jsonResponse =
-                app.get(
-                    "$mainUrl/encrypt-ajax.php?$encryptRequestData",
-                    headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-                )
-            val dataencrypted =
-                jsonResponse.text.substringAfter("{\"data\":\"").substringBefore("\"}")
-            val datadecrypted = cryptoHandler(dataencrypted, foundIv, foundDecryptKey, false)
-            val sources = AppUtils.parseJson<GogoSources>(datadecrypted)
-
-            fun invokeGogoSource(
-                source: GogoSource,
-                sourceCallback: (ExtractorLink) -> Unit
-            ) {
-                sourceCallback.invoke(
-                    ExtractorLink(
-                        mainApiName,
-                        mainApiName,
-                        source.file,
-                        mainUrl,
-                        getQualityFromName(source.label),
-                        isM3u8 = source.type == "hls" || source.label?.contains(
-                            "auto",
-                            ignoreCase = true
-                        ) == true
-                    )
-                )
-            }
-
-            sources.source?.forEach {
-                invokeGogoSource(it, callback)
-            }
-            sources.sourceBk?.forEach {
-                invokeGogoSource(it, callback)
-            }
-        }
     }
 
-    override var mainUrl = "https://anitaku.to"
-    override var name = "Anitaku"
+    override var mainUrl = AnitakuProvider.mainUrl
+    override var name = AnitakuProvider.name
     override val hasQuickSearch = true
     override val hasMainPage = true
 
@@ -193,7 +61,7 @@ class AnitakuProvider : MainAPI() {
         "referer" to "$mainUrl/"
     )
     val parseRegex =
-        Regex("""<li>\s*\n.*\n.*<a\s*href=["'](.*?-episode-(\d+))["']\s*title=["'](.*?)["']>\n.*?img src="(.*?)"""")
+        Regex("<li>\\s*\n.*\n.*<a\\s*href=[\"'](.*?-episode-(\\d+))[\"']\\s*title=[\"'](.*?)[\"']>\n.*?img src=\"(.*?)\"")
 
     override val mainPage = mainPageOf(
         Pair("1", "Recent Release - Sub"),
@@ -349,9 +217,6 @@ class AnitakuProvider : MainAPI() {
     data class GogoSources(
         @JsonProperty("source") val source: List<GogoSource>?,
         @JsonProperty("sourceBk") val sourceBk: List<GogoSource>?,
-        //val track: List<Any?>,
-        //val advertising: List<Any?>,
-        //val linkiframe: String
     )
 
     data class GogoSource(
@@ -368,44 +233,11 @@ class AnitakuProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val doc = app.get(data).document
-        val serverLinks = doc.select("div.anime_muti_link > ul > li").mapNotNull { item ->
-            val sId = item.attr("class")
-            val link = item.selectFirst("a")?.attr("data-video")
-            Pair(sId, link)
+        doc.select("div.anime_muti_link > ul > li").mapNotNull { item ->
+            val serverName = item.attr("class")
+            val url = item.selectFirst("a")?.attr("data-video")
+            AnitakuExtractor().getUrl(url ?: "", serverName, subtitleCallback, callback)
         }
-        serverLinks.forEach { server ->
-            when(server.first) {
-                "streamwish" -> linksFromScript(server.second).forEach { link ->
-                    val sName = serverName(server.first)
-                    callback.invoke(ExtractorLink(sName, sName, link, "", Qualities.Unknown.value,link.contains(".m3u8")))
-                }
-                "doodstream" -> loadExtractor(server.second ?: "", subtitleCallback, callback)
-                "filelions" -> linksFromScript(server.second).forEach { link ->
-                    val sName = serverName(server.first)
-                    callback.invoke(
-                            ExtractorLink(sName, sName, link, "", Qualities.Unknown.value, link.contains(".m3u8"))
-                    )
-                }
-                "anime" -> {
-                    val link = server.second!!
-                    val iv = "3134003223491201"
-                    val secretKey = "37911490979715163134003223491201"
-                    val secretDecryptKey = "54674138327930866480207815084989"
-                    extractVidstream(
-                        link,
-                        serverName(server.first),
-                        callback,
-                        iv,
-                        secretKey,
-                        secretDecryptKey,
-                        isUsingAdaptiveKeys = false,
-                        isUsingAdaptiveData = true
-                    )
-                }
-                "mp4upload" -> loadExtractor(server.second ?: "", subtitleCallback, callback)
-            }
-        }
-        // extractVideos(data, subtitleCallback, callback)
         return true
     }
 
@@ -418,83 +250,18 @@ class AnitakuProvider : MainAPI() {
         return ""
     }
 
-    private suspend fun linksFromScript(url:String?): List<String> {
-        var links = emptyList<String>()
-        if(!url.isNullOrBlank()) {
-            val serverRes = app.get(url)
-            if (serverRes.code == 200) {
-                val doc = serverRes.document
-                val script = doc.selectFirst("script:containsData(sources)")?.data().toString()
-                Regex("file:\"(.*?)\"").find(script)?.groupValues?.get(1)?.let { link ->
-                    links += link
-                }
-            }
-        }
-        return links
-    }
-
-    // private suspend fun extractVideos(
-    //     uri: String,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: (ExtractorLink) -> Unit
-    // ) {
-    //     val doc = app.get(uri).document
-
-    //     val iframe = fixUrlNull(doc.selectFirst("div.play-video > iframe")?.attr("src")) ?: return
-
-    //     argamap(
-    //         {
-    //             val link = iframe.replace("streaming.php", "download")
-    //             val page = app.get(link, headers = mapOf("Referer" to iframe))
-
-    //             page.document.select(".dowload > a").apmap {
-    //                 if (it.hasAttr("download")) {
-    //                     val qual = if (it.text()
-    //                             .contains("HDP")
-    //                     ) "1080" else qualityRegex.find(it.text())?.destructured?.component1()
-    //                         .toString()
-    //                     callback(
-    //                         ExtractorLink(
-    //                             "Gogoanime",
-    //                             "Gogoanime",
-    //                             it.attr("href"),
-    //                             page.url,
-    //                             getQualityFromName(qual),
-    //                             it.attr("href").contains(".m3u8")
-    //                         )
-    //                     )
-    //                 } else {
-    //                     val url = it.attr("href")
-    //                     // loadExtractor(url, null, subtitleCallback, callback)
-    //                 }
+    // private suspend fun linksFromScript(url:String?): List<String> {
+    //     var links = emptyList<String>()
+    //     if(!url.isNullOrBlank()) {
+    //         val serverRes = app.get(url)
+    //         if (serverRes.code == 200) {
+    //             val doc = serverRes.document
+    //             val script = doc.selectFirst("script:containsData(sources)")?.data().toString()
+    //             Regex("file:\"(.*?)\"").find(script)?.groupValues?.get(1)?.let { link ->
+    //                 links += link
     //             }
-    //         }, {
-    //             val streamingResponse = app.get(iframe, headers = mapOf("Referer" to iframe))
-    //             val streamingDocument = streamingResponse.document
-    //             argamap({
-    //                 streamingDocument.select(".list-server-items > .linkserver")
-    //                     .forEach { element ->
-    //                         val status = element.attr("data-status") ?: return@forEach
-    //                         if (status != "1") return@forEach
-    //                         val data = element.attr("data-video") ?: return@forEach
-    //                         loadExtractor(data, streamingResponse.url, subtitleCallback, callback)
-    //                     }
-    //             }, {
-    //                 val iv = "3134003223491201"
-    //                 val secretKey = "37911490979715163134003223491201"
-    //                 val secretDecryptKey = "54674138327930866480207815084989"
-    //                 extractVidstream(
-    //                     iframe,
-    //                     this.name,
-    //                     callback,
-    //                     iv,
-    //                     secretKey,
-    //                     secretDecryptKey,
-    //                     isUsingAdaptiveKeys = false,
-    //                     isUsingAdaptiveData = true
-    //                 )
-    //             })
     //         }
-    //     )
+    //     }
+    //     return links
     // }
 }
