@@ -1,21 +1,18 @@
 package com.RowdyAvocado
 
 // import android.util.Log
-
-import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.utils.Qualities
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
 class AllWish(val plugin: AllWishPlugin) : MainAPI() {
     override var mainUrl = AllWish.mainUrl
-    override var name = "AllWish"
+    override var name = AllWish.name
     override var supportedTypes = setOf(TvType.Anime, TvType.AnimeMovie, TvType.OVA)
     override var lang = "en"
     override val hasMainPage = true
@@ -25,6 +22,7 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
 
     companion object {
         val mainUrl = "https://all-wish.me"
+        var name = "AllWish"
         val xmlHeader = mapOf("X-Requested-With" to "XMLHttpRequest")
         val refHeader = mapOf("Referer" to mainUrl)
     }
@@ -46,7 +44,6 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
             results +=
                     newAnimeSearchResponse(name, url) {
                         this.posterUrl = item.selectFirst("a.poster img")?.attr("data-src")
-                        // Log.d("Rushi", this.posterUrl ?: "")
                     }
         }
         return results
@@ -127,32 +124,20 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
                         .parsedSafe<APIResponse>()
         if (res?.status == 200) {
             res.html.select("div.server-type").forEach { section ->
-                Log.d("rowdy", section.attr("data-type"))
-                Log.d("rowdy", type.toString())
-                Log.d("rowdy", type.contains(section.attr("data-type")).toString())
                 if (type.contains(section.attr("data-type"))) {
                     section.select("div.server-list > div.server").forEach { server ->
                         val serverName = server.selectFirst("div > span")?.text() ?: ""
                         val dataId = server.attr("data-link-id")
-                        val links = AllWishExtractor().getStreamUrl(serverName, dataId)
-                        if (links.isNotEmpty()) {
-                            links.forEach { link ->
-                                callback.invoke(
-                                        ExtractorLink(
-                                                serverName,
-                                                serverName,
-                                                link,
-                                                "",
-                                                Qualities.Unknown.value,
-                                                link.contains(".m3u8")
-                                        )
-                                )
-                            }
-                        }
+                        val apiRes =
+                                app.get("$mainUrl/ajax/server?get=$dataId", AllWish.xmlHeader)
+                                        .parsedSafe<APIResponseUrl>()
+                        val realUrl = apiRes?.result?.url ?: ""
+                        AllWishExtractor().getUrl(realUrl, serverName, subtitleCallback, callback)
                     }
                 }
             }
         }
+
         return true
     }
 
@@ -160,5 +145,14 @@ class AllWish(val plugin: AllWishPlugin) : MainAPI() {
             @JsonProperty("status") val status: Int? = null,
             @JsonProperty("result") val result: String? = null,
             val html: Document = Jsoup.parse(result ?: "")
+    )
+
+    data class APIResponseUrl(
+            @JsonProperty("status") val status: Int? = null,
+            @JsonProperty("result") val result: ServerUrl? = null,
+    )
+
+    data class ServerUrl(
+            @JsonProperty("url") val url: String? = null,
     )
 }

@@ -1,78 +1,84 @@
 package com.RowdyAvocado
 
 import android.util.Base64
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.app
+import com.lagradost.cloudstream3.extractors.Filesim
+import com.lagradost.cloudstream3.extractors.StreamWishExtractor
+import com.lagradost.cloudstream3.extractors.helper.GogoHelper
+import com.lagradost.cloudstream3.utils.ExtractorApi
+import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.Qualities
+import com.lagradost.cloudstream3.utils.loadExtractor
 
-class AllWishExtractor {
-    suspend fun getStreamUrl(serverName: String?, dataId: String): List<String> {
-        var links = emptySet<String>()
-        val res =
-                app.get("${AllWish.mainUrl}/ajax/server?get=$dataId", AllWish.xmlHeader)
-                        .parsedSafe<APIResponse>()
-        val serverUrl = res?.result?.url
-        if (!serverUrl.isNullOrEmpty()) {
+class AllWishExtractor : ExtractorApi() {
+    override val mainUrl = AllWish.mainUrl
+    override val name = AllWish.name
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+            url: String,
+            referer: String?,
+            subtitleCallback: (SubtitleFile) -> Unit,
+            callback: (ExtractorLink) -> Unit
+    ) {
+        val serverName = referer
+        if (url.isNotEmpty()) {
             when (serverName) {
-                "VidPlay" -> {
-                    val tempRes = app.get(serverUrl, headers = AllWish.refHeader)
-                    val encryptedSource = tempRes.url.substringAfterLast("?data=#")
-                    if (encryptedSource.isNotBlank()) {
-                        links +=
-                                Base64.decode(encryptedSource, Base64.DEFAULT)
-                                        .toString(Charsets.UTF_8)
-                    }
-                }
-                "Vidstreaming" -> {}
-                "Gogo server" -> {}
-                "Streamwish" -> {
-                    val serverRes = app.get(serverUrl)
-                    if (serverRes.code == 200) {
-                        val doc = serverRes.document
-                        val script =
-                                doc.selectFirst("script:containsData(sources)")?.data().toString()
-                        Regex("file:\"(.*?)\"").find(script)?.groupValues?.get(1)?.let {
-                            links += it
-                        }
-                    }
-                }
-                "Mp4Upload" -> {
-                    links += serverUrl
-                }
-                "Doodstream" -> {
-                    links += serverUrl
+                "Vidstreaming" -> {
+                    val iv = "3134003223491201"
+                    val secretKey = "37911490979715163134003223491201"
+                    val secretDecryptKey = "54674138327930866480207815084989"
+                    GogoHelper.extractVidstream(
+                            url,
+                            "Vidstreaming",
+                            callback,
+                            iv,
+                            secretKey,
+                            secretDecryptKey,
+                            isUsingAdaptiveKeys = false,
+                            isUsingAdaptiveData = true
+                    )
                 }
                 "Filelions" -> {
-                    links += serverUrl
+                    return Filelions().getUrl(url, referer, subtitleCallback, callback)
+                }
+                "VidPlay" -> {
+                    val tempRes = app.get(url, headers = AllWish.refHeader)
+                    val encryptedSource = tempRes.url.substringAfterLast("?data=#")
+                    if (encryptedSource.isNotBlank()) {
+                        val link =
+                                Base64.decode(encryptedSource, Base64.DEFAULT)
+                                        .toString(Charsets.UTF_8)
+                        callback.invoke(buildExtractorLink(serverName, link))
+                    }
+                }
+                "Gogo server" -> {}
+                "Streamwish" -> {
+                    StreamWishExtractor().getUrl(url, "")
+                }
+                "Mp4Upload" -> {
+                    callback.invoke(buildExtractorLink(serverName, url))
+                }
+                "Doodstream" -> {
+                    loadExtractor(url, subtitleCallback, callback)
                 }
             }
         }
-        return links.toList()
     }
 
-    data class APIResponse(
-            @JsonProperty("status") val status: Int? = null,
-            @JsonProperty("result") val result: ServerUrl? = null,
-    )
-
-    data class ServerUrl(
-            @JsonProperty("url") val url: String? = null,
-    )
+    private fun buildExtractorLink(
+            serverName: String,
+            link: String,
+            referer: String = "",
+            quality: Int = Qualities.Unknown.value
+    ): ExtractorLink {
+        return ExtractorLink(serverName, serverName, link, referer, quality, link.contains(".m3u8"))
+    }
 }
 
-// {
-//     "status": 200,
-//     "result": {
-//         "url":
-// "https:\/\/cdn.animixplay.tube\/player\/?id=6e696e6a612d6b616d75692d657069736f64652d37",
-//         "skip_data": {
-//             "intro": [
-//                 0,
-//                 0
-//             ],
-//             "outro": [
-//                 0,
-//                 0
-//             ]
-//         }
-//     }
-// }
+class Filelions : Filesim() {
+    override val name = "Filelions"
+    override val mainUrl = "https://alions.pro"
+    override val requiresReferer = false
+}
