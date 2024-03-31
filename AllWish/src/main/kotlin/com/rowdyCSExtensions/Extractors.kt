@@ -4,7 +4,6 @@ import android.util.Base64
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.extractors.Filesim
-import com.lagradost.cloudstream3.extractors.StreamWishExtractor
 import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
@@ -41,7 +40,7 @@ class AllWishExtractor : ExtractorApi() {
                     )
                 }
                 "Filelions" -> {
-                    return Filelions().getUrl(url, referer, subtitleCallback, callback)
+                    Filelions().getUrl(url, "", subtitleCallback, callback)
                 }
                 "VidPlay" -> {
                     val tempRes = app.get(url, headers = AllWish.refHeader)
@@ -55,10 +54,10 @@ class AllWishExtractor : ExtractorApi() {
                 }
                 "Gogo server" -> {}
                 "Streamwish" -> {
-                    StreamWishExtractor().getUrl(url, "")
+                    StreamWish().getUrl(url, "", subtitleCallback, callback)
                 }
                 "Mp4Upload" -> {
-                    callback.invoke(buildExtractorLink(serverName, url))
+                    loadExtractor(url, subtitleCallback, callback)
                 }
                 "Doodstream" -> {
                     loadExtractor(url, subtitleCallback, callback)
@@ -80,5 +79,11 @@ class AllWishExtractor : ExtractorApi() {
 class Filelions : Filesim() {
     override val name = "Filelions"
     override val mainUrl = "https://alions.pro"
+    override val requiresReferer = false
+}
+
+class StreamWish : Filesim() {
+    override val name = "StreamWish"
+    override val mainUrl = "https://awish.pro"
     override val requiresReferer = false
 }

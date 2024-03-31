@@ -2,7 +2,6 @@ package com.KillerDogeEmpire
 
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.extractors.Filesim
-import com.lagradost.cloudstream3.extractors.StreamWishExtractor
 import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
@@ -23,8 +22,7 @@ class AnitakuExtractor : ExtractorApi() {
         val serverName = referer
         if (url.isNotEmpty()) {
             when (serverName) {
-                "streamwish" ->
-                        StreamWishExtractor().getUrl(url, "")?.forEach { callback.invoke(it) }
+                "streamwish" -> StreamWish().getUrl(url, "", subtitleCallback, callback)
                 "doodstream" -> loadExtractor(url, subtitleCallback, callback)
                 "filelions" -> {
                     Filelions().getUrl(url, "", subtitleCallback, callback)
@@ -63,5 +61,11 @@ class AnitakuExtractor : ExtractorApi() {
 class Filelions : Filesim() {
     override val name = "Filelions"
     override val mainUrl = "https://alions.pro"
+    override val requiresReferer = false
+}
+
+class StreamWish : Filesim() {
+    override val name = "StreamWish"
+    override val mainUrl = "https://awish.pro"
     override val requiresReferer = false
 }
