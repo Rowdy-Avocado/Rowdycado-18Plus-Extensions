@@ -16,7 +16,7 @@ import java.net.URLEncoder
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.utils.JsUnpacker
 import com.lagradost.cloudstream3.utils.Qualities
-//import android.util.Log (only required for debugging)
+//import android.util.Log //(only required for debugging)
 
 class AniwaveProvider : MainAPI() {
     override var mainUrl = AniwaveProviderPlugin.currentAniwaveServer
