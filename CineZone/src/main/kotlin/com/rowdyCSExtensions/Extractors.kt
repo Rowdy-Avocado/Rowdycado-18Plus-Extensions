@@ -2,6 +2,7 @@ package com.RowdyAvocado
 
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.extractors.FileMoon
+import com.lagradost.cloudstream3.extractors.Vidplay
 import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.loadExtractor
@@ -22,8 +23,15 @@ class CineZoneExtractor : ExtractorApi() {
             when (serverName) {
                 null -> {}
                 "filemoon" -> FileMoon().getUrl(url, null, subtitleCallback, callback)
+                "vidplay" -> Vidplay2().getUrl(url, referer, subtitleCallback, callback)
                 else -> loadExtractor(url, subtitleCallback, callback)
             }
         }
     }
+}
+
+open class Vidplay2 : Vidplay() {
+    override val name = "VidPlay"
+    override val mainUrl = "https://vid41c.site"
+    override val requiresReferer = true
 }
