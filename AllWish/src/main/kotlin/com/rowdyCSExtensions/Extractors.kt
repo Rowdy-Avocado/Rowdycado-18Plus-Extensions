@@ -3,9 +3,10 @@ package com.RowdyAvocado
 import android.util.Base64
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.app
-import com.lagradost.cloudstream3.extractors.Filesim
 import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 import com.lagradost.cloudstream3.utils.ExtractorApi
+import com.lagradost.cloudstream3.extractors.StreamWishExtractor
+import com.lagradost.cloudstream3.extractors.VidhideExtractor
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
@@ -76,14 +77,15 @@ class AllWishExtractor : ExtractorApi() {
     }
 }
 
-class Filelions : Filesim() {
-    override val name = "Filelions"
-    override val mainUrl = "https://alions.pro"
+class Filelions : VidhideExtractor() {
+    override var name = "Filelions"
+    override var mainUrl = "https://alions.pro"
     override val requiresReferer = false
 }
 
-class StreamWish : Filesim() {
-    override val name = "StreamWish"
-    override val mainUrl = "https://awish.pro"
+class StreamWish : StreamWishExtractor() {
+    override var name = "StreamWish"
+    override var mainUrl = "https://awish.pro"
     override val requiresReferer = false
 }
+
