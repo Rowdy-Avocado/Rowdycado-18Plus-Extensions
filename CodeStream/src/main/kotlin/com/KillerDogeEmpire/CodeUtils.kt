@@ -1257,15 +1257,15 @@ private enum class Symbol(val decimalValue: Int) {
 object AniwaveUtils {
 
     fun encodeVrf(input: String): String {
-        val rc4Key = SecretKeySpec("ysJhV6U27FVIjjuk".toByteArray(), "RC4")
+        val rc4Key = SecretKeySpec("tGn6kIpVXBEUmqjD".toByteArray(), "RC4")
         val cipher = Cipher.getInstance("RC4")
         cipher.init(Cipher.DECRYPT_MODE, rc4Key, cipher.parameters)
         var vrf = cipher.doFinal(input.toByteArray())
         vrf = Base64.encode(vrf, Base64.URL_SAFE or Base64.NO_WRAP)
         vrf = Base64.encode(vrf, Base64.DEFAULT or Base64.NO_WRAP)
-        vrf = vrfShift(vrf)
-        vrf = Base64.encode(vrf, Base64.DEFAULT)
-        vrf = rot13(vrf)
+        vrf = vrf.reversed().toByteArray()
+        vrf = Base64.encode(vrf, Base64.URL_SAFE or Base64.NO_WRAP)
+        // vrf = rot13(vrf)
         val stringVrf = vrf.toString(Charsets.UTF_8)
         return encode(stringVrf)
     }
@@ -1273,7 +1273,7 @@ object AniwaveUtils {
     fun decodeVrf(input: String): String {
         var vrf = input.toByteArray()
         vrf = Base64.decode(vrf, Base64.URL_SAFE)
-        val rc4Key = SecretKeySpec("hlPeNwkncH0fq9so".toByteArray(), "RC4")
+        val rc4Key = SecretKeySpec("LUyDrL4qIxtIxOGs".toByteArray(), "RC4")
         val cipher = Cipher.getInstance("RC4")
         cipher.init(Cipher.DECRYPT_MODE, rc4Key, cipher.parameters)
         vrf = cipher.doFinal(vrf)
@@ -1294,7 +1294,7 @@ object AniwaveUtils {
 
     private fun vrfShift(vrf: ByteArray): ByteArray {
         for (i in vrf.indices) {
-            val shift = arrayOf(-3, 3, -4, 2, -2, 5, 4, 5)[i % 8]
+            val shift = arrayOf(-2, -4, -5, 6, 2, -3, 3, 6)[i % 8]
             vrf[i] = vrf[i].plus(shift).toByte()
         }
         return vrf
