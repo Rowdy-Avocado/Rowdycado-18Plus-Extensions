@@ -1263,6 +1263,7 @@ object AniwaveUtils {
         var vrf = cipher.doFinal(input.toByteArray())
         vrf = Base64.encode(vrf, Base64.URL_SAFE or Base64.NO_WRAP)
         vrf = Base64.encode(vrf, Base64.DEFAULT or Base64.NO_WRAP)
+        vrf = vrfShift(vrf)
         vrf = vrf.reversed().toByteArray()
         vrf = Base64.encode(vrf, Base64.URL_SAFE or Base64.NO_WRAP)
         // vrf = rot13(vrf)
