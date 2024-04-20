@@ -248,7 +248,7 @@ open class Streamruby : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val id = "/e/(\\w+)".toRegex().find(url)?.groupValues?.get(1) ?: return
+        val id = "/e/(\\w+)".toRegex().find(getEmbedUrl(url))?.groupValues?.get(1) ?: return
         val response = app.post(
             "$mainUrl/dl", data = mapOf(
                 "op" to "embed",
@@ -268,6 +268,14 @@ open class Streamruby : ExtractorApi() {
             m3u8 ?: return,
             mainUrl
         ).forEach(callback)
+    }
+
+    private fun getEmbedUrl(url: String): String {
+		if (url.contains("/embed-")) {
+            val id1 = url.substringAfter("/embed-")
+            return "$mainUrl/e/$id1"
+        }
+            return url
     }
 
 }
@@ -522,4 +530,19 @@ class Flaswish : Ridoo() {
 class Comedyshow : Jeniusplay() {
     override val mainUrl = "https://comedyshow.to"
     override val name = "Comedyshow"
+}
+
+class Rubystream : Streamruby() {
+	override val name = "Rubystream"
+    override var mainUrl = "https://rubystream.xyz"
+}
+
+class Stmruby : Streamruby() {
+    override var mainUrl = "https://stmruby.com"
+    override val name = "Stmruby"
+}
+
+class Rubystm : Streamruby() {
+    override var mainUrl = "https://rubystm.com"
+    override val name = "Rubystm"
 }
