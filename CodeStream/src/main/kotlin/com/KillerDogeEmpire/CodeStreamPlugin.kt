@@ -61,5 +61,8 @@ class CodeStreamPlugin: Plugin() {
         registerExtractorAPI(Gdmirrorbot())
         registerExtractorAPI(FilemoonNl())
         registerExtractorAPI(Alions())
+        registerExtractorAPI(Rubystream())
+        registerExtractorAPI(Stmruby())
+        registerExtractorAPI(Rubystm())
     }
 }
