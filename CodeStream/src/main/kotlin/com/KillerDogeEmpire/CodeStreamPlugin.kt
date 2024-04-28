@@ -1,34 +1,15 @@
-
 package com.KillerDogeEmpire
 
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
 import android.content.Context
-import com.KillerDogeEmpire.Alions
-import com.KillerDogeEmpire.Animefever
-import com.KillerDogeEmpire.Comedyshow
-import com.KillerDogeEmpire.Embedrise
-import com.KillerDogeEmpire.Embedwish
-import com.KillerDogeEmpire.FilelionsTo
-import com.KillerDogeEmpire.FilemoonNl
-import com.KillerDogeEmpire.Flaswish
-import com.KillerDogeEmpire.Gdmirrorbot
-import com.KillerDogeEmpire.M4ufree
-import com.KillerDogeEmpire.Multimovies
-import com.KillerDogeEmpire.MultimoviesSB
-import com.KillerDogeEmpire.Mwish
-import com.KillerDogeEmpire.Netembed
-import com.KillerDogeEmpire.Playm4u
-import com.KillerDogeEmpire.Ridoo
-import com.KillerDogeEmpire.CodeStream
-import com.KillerDogeEmpire.Streamruby
-import com.KillerDogeEmpire.Streamvid
-import com.KillerDogeEmpire.Streamwish
-import com.KillerDogeEmpire.TravelR
-import com.KillerDogeEmpire.Uploadever
-import com.KillerDogeEmpire.UqloadsXyz
-import com.KillerDogeEmpire.VCloud
-import com.KillerDogeEmpire.Yipsu
+import com.hexated.VidsrcTo
+import com.lagradost.cloudstream3.extractors.DoodYtExtractor
+import com.lagradost.cloudstream3.extractors.FileMoon
+import com.lagradost.cloudstream3.extractors.MixDrop
+import com.lagradost.cloudstream3.extractors.StreamTape
+import com.lagradost.cloudstream3.extractors.Vidmolyme
+import com.lagradost.cloudstream3.extractors.Vidplay
 
 @CloudstreamPlugin
 class CodeStreamPlugin: Plugin() {
@@ -39,16 +20,26 @@ class CodeStreamPlugin: Plugin() {
         registerExtractorAPI(Animefever())
         registerExtractorAPI(Multimovies())
         registerExtractorAPI(MultimoviesSB())
+        registerExtractorAPI(VidsrcTo())
         registerExtractorAPI(Yipsu())
         registerExtractorAPI(Mwish())
         registerExtractorAPI(TravelR())
         registerExtractorAPI(Playm4u())
+        registerExtractorAPI(Vidplay())
+        registerExtractorAPI(FileMoon())
         registerExtractorAPI(VCloud())
-
+        registerExtractorAPI(Bestx())
+        registerExtractorAPI(Snolaxstream())
+        registerExtractorAPI(Pixeldra())
+        registerExtractorAPI(Graceaddresscommunity())
         registerExtractorAPI(M4ufree())
         registerExtractorAPI(Streamruby())
         registerExtractorAPI(Streamwish())
-        registerExtractorAPI(FilelionsTo())
+        registerExtractorAPI(Filelion())
+        registerExtractorAPI(DoodYtExtractor())
+        registerExtractorAPI(dlions())
+        registerExtractorAPI(MixDrop())
+        registerExtractorAPI(dwish())
         registerExtractorAPI(Embedwish())
         registerExtractorAPI(UqloadsXyz())
         registerExtractorAPI(Uploadever())
@@ -57,9 +48,12 @@ class CodeStreamPlugin: Plugin() {
         registerExtractorAPI(Comedyshow())
         registerExtractorAPI(Ridoo())
         registerExtractorAPI(Streamvid())
+        registerExtractorAPI(StreamTape())
+        registerExtractorAPI(do0od())
         registerExtractorAPI(Embedrise())
         registerExtractorAPI(Gdmirrorbot())
         registerExtractorAPI(FilemoonNl())
         registerExtractorAPI(Alions())
+        registerExtractorAPI(Vidmolyme())
     }
 }
