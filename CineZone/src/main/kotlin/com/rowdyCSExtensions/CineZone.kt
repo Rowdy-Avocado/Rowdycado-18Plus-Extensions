@@ -1,7 +1,7 @@
 package com.RowdyAvocado
 
 // import android.util.Log
-import android.util.Log
+
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.MainAPI
@@ -118,9 +118,11 @@ class CineZone(val plugin: CineZonePlugin) : MainAPI() {
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit
     ): Boolean {
-        Log.d("rowdy", data)
-        val serversRes = apiCall("server/list", data.replace(mainUrl + "/", ""))
-        Log.d("rowdy", serversRes.toString())
+        val episodeId = data.replace(mainUrl + "/", "")
+        val subtitles = getSubtitles(episodeId)
+        subtitles.forEach { subtitleCallback.invoke(SubtitleFile(it.lang, it.file)) }
+
+        val serversRes = apiCall("server/list", episodeId)
         serversRes?.select("span.server")?.forEach { server ->
             val sName = serverName(server.attr("data-id"))
             val sId = server.attr("data-link-id")
@@ -146,6 +148,13 @@ class CineZone(val plugin: CineZonePlugin) : MainAPI() {
             return CineZoneUtils.vrfDecrypt(res.result.url)
         }
         return ""
+    }
+
+    private suspend fun getSubtitles(episodeId: String): Array<CineZoneSubtitle> {
+        val res =
+                app.get("$mainUrl/ajax/episode/subtitles/$episodeId")
+                        .parsedSafe<Array<CineZoneSubtitle>>()
+        return res ?: throw Exception("Unable to fetch Subtitles")
     }
 
     private fun serverName(serverID: String?): String? {
@@ -174,5 +183,11 @@ class CineZone(val plugin: CineZonePlugin) : MainAPI() {
 
     data class ServerUrl(
             @JsonProperty("url") val url: String,
+    )
+
+    data class CineZoneSubtitle(
+            @JsonProperty("file") val file: String,
+            @JsonProperty("label") val lang: String,
+            @JsonProperty("kind") val kind: String,
     )
 }

@@ -1,7 +1,6 @@
 package com.hexated
 
 import android.util.Base64
-import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.apmap
@@ -17,7 +16,6 @@ import javax.crypto.spec.SecretKeySpec
 class AnyVidplay(hostUrl: String) : Vidplay() {
     override val mainUrl = hostUrl
 }
-
 
 class VidsrcTo : ExtractorApi() {
     override val name = "VidSrcTo"
@@ -40,11 +38,10 @@ class VidsrcTo : ExtractorApi() {
                         app.get("$mainUrl/ajax/embed/source/${source.id}")
                                 .parsedSafe<VidsrctoEmbedSource>()
                 val finalUrl = DecryptUrl(embedRes?.result?.encUrl ?: "")
-                Log.d("rowdyTest", source.title + ": " + finalUrl)
                 when (source.title) {
                     "Vidplay" ->
-                        AnyVidplay(finalUrl.substringBefore("/e/"))
-                                .getUrl(finalUrl, referer, subtitleCallback, callback)
+                            AnyVidplay(finalUrl.substringBefore("/e/"))
+                                    .getUrl(finalUrl, referer, subtitleCallback, callback)
                     "Filemoon" -> FileMoon().getUrl(finalUrl, referer, subtitleCallback, callback)
                     else -> {}
                 }
