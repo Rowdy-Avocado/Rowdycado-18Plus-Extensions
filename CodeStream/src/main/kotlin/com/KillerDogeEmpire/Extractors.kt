@@ -13,7 +13,7 @@ import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.base64Decode
 import com.lagradost.cloudstream3.extractors.DoodLaExtractor
 import com.lagradost.cloudstream3.extractors.Jeniusplay
-import com.lagradost.cloudstream3.extractors.Pixeldrain
+import com.lagradost.cloudstream3.extractors.PixelDrain
 import com.lagradost.cloudstream3.utils.*
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -25,6 +25,7 @@ import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.M3u8Helper
 
+@OptIn(kotlin.ExperimentalStdlibApi::class)
 open class Playm4u : ExtractorApi() {
     override val name = "Playm4u"
     override val mainUrl = "https://play9str.playm4u.xyz"
@@ -482,7 +483,7 @@ class UqloadsXyz : Filesim() {
     override var mainUrl = "https://uqloads.xyz"
 }
 
-class Pixeldra : Pixeldrain() {
+class Pixeldra : PixelDrain() {
     override val mainUrl = "https://pixeldra.in"
 }
 
