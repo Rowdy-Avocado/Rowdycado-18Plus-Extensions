@@ -1,5 +1,5 @@
 {
-  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.configuration.updateBuildConfiguration": "automatic",
   "[kotlin]": {
     "editor.defaultFormatter": "fwcd.kotlin"
   },
@@ -10,7 +10,9 @@
     "CS3 Log": {
       "overrideName": true,
       "source": "PowerShell",
-      "args": ["adb logcat -b all -c; adb logcat --pid=$(adb shell pidof -s com.lagradost.cloudstream3.prerelease)"]
+      "args": [
+        "adb logcat -b all -c; adb logcat --pid=$(adb shell pidof -s com.lagradost.cloudstream3.prerelease)"
+      ]
     }
   }
 }
