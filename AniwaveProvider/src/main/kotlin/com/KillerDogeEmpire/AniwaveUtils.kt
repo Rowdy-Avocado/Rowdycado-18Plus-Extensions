@@ -3,9 +3,11 @@ package com.KillerDogeEmpire
 import android.util.Base64
 import com.lagradost.cloudstream3.syncproviders.SyncIdName
 import java.net.URLDecoder
+import java.net.URI
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
+@OptIn(kotlin.ExperimentalStdlibApi::class)
 object AniwaveUtils {
 
     fun vrfEncrypt(input: String): String {
@@ -99,5 +101,9 @@ object AniwaveUtils {
             }
         """
         return query
+    }
+
+    fun getBaseUrl(url: String): String {
+        return URI(url).let { "${it.scheme}://${it.host}" }
     }
 }
