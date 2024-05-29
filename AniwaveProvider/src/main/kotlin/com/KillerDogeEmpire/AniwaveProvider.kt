@@ -1,6 +1,7 @@
 package com.KillerDogeEmpire
 
 // import android.util.Log //(only required for debugging)
+
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.Episode
@@ -299,42 +300,44 @@ class AniwaveProvider : MainAPI() {
                     Pair(newSname, datalinkId)
                 }
         aas.amap { (sName, sId) ->
-            val vrf = AniwaveUtils.vrfEncrypt(sId)
-            val videncrr = app.get("$mainUrl/ajax/server/$sId?$vrf").parsed<Links>()
-            val encUrl = videncrr.result?.url ?: return@amap
-            val asss = AniwaveUtils.vrfDecrypt(encUrl)
+            try {
+                val vrf = AniwaveUtils.vrfEncrypt(sId)
+                val videncrr = app.get("$mainUrl/ajax/server/$sId?$vrf").parsed<Links>()
+                val encUrl = videncrr.result?.url ?: return@amap
+                val asss = AniwaveUtils.vrfDecrypt(encUrl)
 
-            if (sName.equals("filemoon")) {
-                val res = app.get(asss)
-                if (res.code == 200) {
-                    val packedJS =
-                            res.document
-                                    .selectFirst("script:containsData(function(p,a,c,k,e,d))")
-                                    ?.data()
-                                    .toString()
-                    JsUnpacker(packedJS).unpack().let { unPacked ->
-                        Regex("sources:\\[\\{file:\"(.*?)\"")
-                                .find(unPacked ?: "")
-                                ?.groupValues
-                                ?.get(1)
-                                ?.let { link ->
-                                    callback.invoke(
-                                            ExtractorLink(
-                                                    "Filemoon",
-                                                    "Filemoon",
-                                                    link,
-                                                    "",
-                                                    Qualities.Unknown.value,
-                                                    link.contains(".m3u8")
-                                            )
-                                    )
-                                }
+                if (sName.equals("filemoon")) {
+                    val res = app.get(asss)
+                    if (res.code == 200) {
+                        val packedJS =
+                                res.document
+                                        .selectFirst("script:containsData(function(p,a,c,k,e,d))")
+                                        ?.data()
+                                        .toString()
+                        JsUnpacker(packedJS).unpack().let { unPacked ->
+                            Regex("sources:\\[\\{file:\"(.*?)\"")
+                                    .find(unPacked ?: "")
+                                    ?.groupValues
+                                    ?.get(1)
+                                    ?.let { link ->
+                                        callback.invoke(
+                                                ExtractorLink(
+                                                        "Filemoon",
+                                                        "Filemoon",
+                                                        link,
+                                                        "",
+                                                        Qualities.Unknown.value,
+                                                        link.contains(".m3u8")
+                                                )
+                                        )
+                                    }
+                        }
                     }
-                }
-            } else if (sName.equals("vidplay")) {
-                val host = AniwaveUtils.getBaseUrl(asss)
-                AnyVidplay(host).getUrl(asss, host, subtitleCallback, callback)
-            } else loadExtractor(asss, subtitleCallback, callback)
+                } else if (sName.equals("vidplay")) {
+                    val host = AniwaveUtils.getBaseUrl(asss)
+                    AnyVidplay(host).getUrl(asss, host, subtitleCallback, callback)
+                } else loadExtractor(asss, subtitleCallback, callback)
+            } catch (e: Exception) {}
         }
         return true
     }
