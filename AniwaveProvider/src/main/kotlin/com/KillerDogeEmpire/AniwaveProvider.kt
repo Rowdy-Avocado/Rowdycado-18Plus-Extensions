@@ -37,7 +37,7 @@ class AniwaveProvider : MainAPI() {
     }
 
     private fun Element.toSearchResponse(): SearchResponse? {
-        val title = this.selectFirst(".info > .name") ?: return null
+        val title = this.selectFirst(".info .name") ?: return null
         val link = title.attr("href").replace(Regex("/ep.*\$"), "")
         val poster = this.selectFirst(".poster > a > img")?.attr("src")
         val meta = this.selectFirst(".poster > a > .meta > .inner > .left")
@@ -114,7 +114,7 @@ class AniwaveProvider : MainAPI() {
         val softsubeps = ArrayList<Episode>()
         val uncensored = ArrayList<Episode>()
         val genres =
-                doc.select("div.meta:nth-child(1) > div:contains(Genre:) a").mapNotNull {
+                doc.select("div.meta:nth-child(1) > div:contains(Genres:) a").mapNotNull {
                     it.text()
                 }
         val recss =
