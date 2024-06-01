@@ -4,7 +4,7 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 }
 // use an integer for version numbers
-version = 14
+version = 15
 
 
 cloudstream {
@@ -29,16 +29,4 @@ cloudstream {
 
     // random cc logo i found
     iconUrl = "https://raw.githubusercontent.com/Rowdy-Avocado/Rowdycado-Extensions/master/logos/ultima.png"
-}
-
-android {
-    buildFeatures {
-        viewBinding = true
-    }
-
-    defaultConfig {
-        minSdk = 26
-        compileSdkVersion(33)
-        targetSdk = 33
-    }
 }
