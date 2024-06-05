@@ -6,7 +6,7 @@
     android:orientation="horizontal">
 
     <CheckBox
-        android:id="@+id/child_checkbox"
+        android:id="@+id/section_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingRight="10dp"
@@ -48,4 +48,3 @@
             android:text="+" />
     </LinearLayout>
 </LinearLayout>
-    

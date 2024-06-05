@@ -1,6 +1,6 @@
 package com.KillerDogeEmpire
 
-import com.KillerDogeEmpire.UltimaPlugin.SectionInfo
+import com.KillerDogeEmpire.UltimaUtils.SectionInfo
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.APIHolder.allProviders
@@ -15,6 +15,7 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
     override var lang = "en"
     override val hasMainPage = true
     override val hasQuickSearch = false
+    private val sm = UltimaStorageManager
 
     val mapper = jacksonObjectMapper()
     var sectionNamesList: List<String> = emptyList()
@@ -23,7 +24,7 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
         sectionNamesList = emptyList()
         var data: List<MainPageData> = emptyList()
         var savedSections: List<SectionInfo> = emptyList()
-        val savedPlugins = plugin.currentSections
+        val savedPlugins = sm.currentExtensions
         savedPlugins.forEach { plugin ->
             plugin.sections?.forEach { section -> savedSections += section }
         }
@@ -41,7 +42,7 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
 
     private fun buildSectionName(section: SectionInfo): String {
         var name: String
-        if (plugin.extNameOnHome) name = section.pluginName + ": " + section.name!!
+        if (sm.extNameOnHome) name = section.pluginName + ": " + section.name!!
         else if (sectionNamesList.contains(section.name!!))
                 name =
                         "${section.name!!} ${sectionNamesList.filter { it.contains(section.name!!) }.size + 1}"
