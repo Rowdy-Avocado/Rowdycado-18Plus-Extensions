@@ -2,6 +2,7 @@ package com.KillerDogeEmpire
 
 import com.KillerDogeEmpire.UltimaMediaProvidersUtils.ServerName
 import com.KillerDogeEmpire.UltimaMediaProvidersUtils.commonLinkLoader
+import com.KillerDogeEmpire.UltimaMediaProvidersUtils.getBaseUrl
 import com.KillerDogeEmpire.UltimaUtils.Category
 import com.KillerDogeEmpire.UltimaUtils.LinkData
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -62,7 +63,7 @@ class IdliXMediaProvider : MediaProvider() {
         }
 
         val res = app.get(url ?: return, interceptor = if (hasCloudflare) interceptor else null)
-        val referer = UltimaMediaProvidersUtils.getBaseUrl(res.url)
+        val referer = getBaseUrl(res.url)
         val document = res.document
         document.select("ul#playeroptionsul > li")
                 .map { Triple(it.attr("data-post"), it.attr("data-nume"), it.attr("data-type")) }
