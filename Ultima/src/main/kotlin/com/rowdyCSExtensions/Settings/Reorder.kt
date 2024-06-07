@@ -114,7 +114,7 @@ class UltimaReorder(val plugin: UltimaPlugin) : BottomSheetDialogFragment() {
             decreaseBtn.setImageDrawable(getDrawable("triangle"))
             decreaseBtn.setRotation(180f)
 
-            it.priority = counter
+            if (it.priority.equals(0)) it.priority = counter
             sectionName.text = "${it.pluginName}: ${it.name}"
 
             // configuring click listener for increase button

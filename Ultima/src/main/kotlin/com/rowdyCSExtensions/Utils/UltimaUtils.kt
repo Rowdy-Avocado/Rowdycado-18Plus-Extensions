@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 object UltimaUtils {
     data class SectionInfo(
-            @JsonProperty("name") var name: String? = null,
-            @JsonProperty("url") var url: String? = null,
-            @JsonProperty("pluginName") var pluginName: String? = null,
+            @JsonProperty("name") var name: String,
+            @JsonProperty("url") var url: String,
+            @JsonProperty("pluginName") var pluginName: String,
             @JsonProperty("enabled") var enabled: Boolean = false,
-            @JsonProperty("priority") var priority: Int = 1
+            @JsonProperty("priority") var priority: Int = 0
     )
 
     data class ExtensionInfo(

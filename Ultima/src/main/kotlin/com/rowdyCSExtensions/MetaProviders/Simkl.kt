@@ -154,7 +154,7 @@ class Simkl(val plugin: UltimaPlugin) : MainAPI() {
     }
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        if (request.name.equals("Personal")) {
+        if (request.name.contains("Personal")) {
             // Reading and manipulating personal library
             api.loginInfo()
                     ?: return newHomePageResponse(

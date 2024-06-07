@@ -40,11 +40,11 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
 
     private fun buildSectionName(section: SectionInfo): String {
         var name: String
-        if (sm.extNameOnHome) name = section.pluginName + ": " + section.name!!
-        else if (sectionNamesList.contains(section.name!!))
+        if (sm.extNameOnHome) name = section.pluginName + ": " + section.name
+        else if (sectionNamesList.contains(section.name))
                 name =
-                        "${section.name!!} ${sectionNamesList.filter { it.contains(section.name!!) }.size + 1}"
-        else name = section.name!!
+                        "${section.name} ${sectionNamesList.filter { it.contains(section.name) }.size + 1}"
+        else name = section.name
         sectionNamesList += name
         return name
     }

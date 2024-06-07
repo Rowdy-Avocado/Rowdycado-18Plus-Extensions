@@ -44,6 +44,8 @@ class AniList(val plugin: UltimaPlugin) : MainAPI() {
     override val hasQuickSearch = false
     private val api = AccountManager.aniListApi
     private val apiUrl = "https://graphql.anilist.co"
+    private final val mediaLimit = 20
+    private final val isAdult = false
     private val headerJSON =
             mapOf("Accept" to "application/json", "Content-Type" to "application/json")
 
@@ -66,13 +68,6 @@ class AniList(val plugin: UltimaPlugin) : MainAPI() {
         return newAnimeSearchResponse(title, url, TvType.Anime) { this.posterUrl = posterUrl }
     }
 
-    private fun test(test: AniListApi.SeasonMedia): SearchResponse {
-        val title = test.title?.english ?: test.title?.romaji ?: ""
-        val url = "$mainUrl/anime/${test.id}"
-        val posterUrl = test.coverImage?.large
-        return newAnimeSearchResponse(title, url, TvType.Anime) { this.posterUrl = posterUrl }
-    }
-
     private suspend fun MainPageRequest.toSearchResponseList(
             page: Int
     ): Pair<List<SearchResponse>, Boolean> {
@@ -86,19 +81,27 @@ class AniList(val plugin: UltimaPlugin) : MainAPI() {
 
     override val mainPage =
             mainPageOf(
-                    "query (\$page: Int = ###, \$sort: [MediaSort] = [TRENDING_DESC, POPULARITY_DESC], \$isAdult: Boolean = false) { Page(page: \$page, perPage: 20) { pageInfo { total perPage currentPage lastPage hasNextPage } media(sort: \$sort, isAdult: \$isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }" to
+                    "query (\$page: Int = ###, \$sort: [MediaSort] = [TRENDING_DESC, POPULARITY_DESC], \$isAdult: Boolean = $isAdult) { Page(page: \$page, perPage: $mediaLimit) { pageInfo { total perPage currentPage lastPage hasNextPage } media(sort: \$sort, isAdult: \$isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }" to
                             "Trending Now",
-                    "query (\$page: Int = ###, \$seasonYear: Int = 2024, \$sort: [MediaSort] = [TRENDING_DESC, POPULARITY_DESC], \$isAdult: Boolean = false) { Page(page: \$page, perPage: 20) { pageInfo { total perPage currentPage lastPage hasNextPage } media(sort: \$sort, seasonYear: \$seasonYear, season: SPRING, isAdult: \$isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }" to
+                    "query (\$page: Int = ###, \$seasonYear: Int = 2024, \$sort: [MediaSort] = [TRENDING_DESC, POPULARITY_DESC], \$isAdult: Boolean = $isAdult) { Page(page: \$page, perPage: $mediaLimit) { pageInfo { total perPage currentPage lastPage hasNextPage } media(sort: \$sort, seasonYear: \$seasonYear, season: SPRING, isAdult: \$isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }" to
                             "Popular This Season",
-                    "query (\$page: Int = ###, \$sort: [MediaSort] = [POPULARITY_DESC], \$isAdult: Boolean = false) { Page(page: \$page, perPage: 20) { pageInfo { total perPage currentPage lastPage hasNextPage } media(sort: \$sort, isAdult: \$isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }" to
+                    "query (\$page: Int = ###, \$sort: [MediaSort] = [POPULARITY_DESC], \$isAdult: Boolean = $isAdult) { Page(page: \$page, perPage: $mediaLimit) { pageInfo { total perPage currentPage lastPage hasNextPage } media(sort: \$sort, isAdult: \$isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }" to
                             "All Time Popular",
-                    "query (\$page: Int = ###, \$sort: [MediaSort] = [SCORE_DESC], \$isAdult: Boolean = false) { Page(page: \$page, perPage: 20) { pageInfo { total perPage currentPage lastPage hasNextPage } media(sort: \$sort, isAdult: \$isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }" to
+                    "query (\$page: Int = ###, \$sort: [MediaSort] = [SCORE_DESC], \$isAdult: Boolean = $isAdult) { Page(page: \$page, perPage: $mediaLimit) { pageInfo { total perPage currentPage lastPage hasNextPage } media(sort: \$sort, isAdult: \$isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }" to
                             "Top 100 Anime",
                     "Personal" to "Personal"
             )
 
+    override suspend fun search(query: String): List<SearchResponse>? {
+        val res =
+                anilistAPICall(
+                        "query (\$search: String = \"Attack On Titan\") { Page(page: 1, perPage: $mediaLimit) { pageInfo { total perPage currentPage lastPage hasNextPage } media(search: \$search, isAdult: $isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }"
+                )
+        return res.data.page?.media?.map { it.toSearchResponse() }
+    }
+
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        if (request.name.equals("Personal")) {
+        if (request.name.contains("Personal")) {
             // Reading and manipulating personal library
             api.loginInfo()
                     ?: return newHomePageResponse(
@@ -182,42 +185,42 @@ class AniList(val plugin: UltimaPlugin) : MainAPI() {
 
     data class AnilistAPIResponse(
             @JsonProperty("data") val data: AnilistData,
-    )
-
-    data class AnilistData(
-            @JsonProperty("Page") val page: AnilistPage?,
-            @JsonProperty("Media") val media: anilistMedia?,
-    )
-
-    data class AnilistPage(
-            @JsonProperty("pageInfo") val pageInfo: LikePageInfo,
-            @JsonProperty("media") val media: List<Media>,
-    )
-
-    data class anilistMedia(
-            @JsonProperty("id") val id: Int,
-            @JsonProperty("seasonYear") val seasonYear: Int,
-            @JsonProperty("episodes") val episodes: Int?,
-            @JsonProperty("title") val title: Title,
-            @JsonProperty("genres") val genres: List<String>,
-            @JsonProperty("description") val description: String?,
-            @JsonProperty("coverImage") val coverImage: CoverImage,
-            @JsonProperty("bannerImage") val bannerImage: String,
-            @JsonProperty("nextAiringEpisode") val nextAiringEpisode: SeasonNextAiringEpisode?,
-            @JsonProperty("recommendations") val recommendations: RecommendationConnection?,
     ) {
-        fun totalEpisodes(): Int {
-            return nextAiringEpisode?.episode?.minus(1)
-                    ?: episodes ?: throw Exception("Unable to calculate total episodes")
+        data class AnilistData(
+                @JsonProperty("Page") val page: AnilistPage?,
+                @JsonProperty("Media") val media: anilistMedia?,
+        ) {
+            data class AnilistPage(
+                    @JsonProperty("pageInfo") val pageInfo: LikePageInfo,
+                    @JsonProperty("media") val media: List<Media>,
+            )
         }
 
-        fun getTitle(): String {
-            return title.english
-                    ?: title.romaji ?: throw Exception("Unable to calculate total episodes")
-        }
+        data class anilistMedia(
+                @JsonProperty("id") val id: Int,
+                @JsonProperty("seasonYear") val seasonYear: Int,
+                @JsonProperty("episodes") val episodes: Int?,
+                @JsonProperty("title") val title: Title,
+                @JsonProperty("genres") val genres: List<String>,
+                @JsonProperty("description") val description: String?,
+                @JsonProperty("coverImage") val coverImage: CoverImage,
+                @JsonProperty("bannerImage") val bannerImage: String,
+                @JsonProperty("nextAiringEpisode") val nextAiringEpisode: SeasonNextAiringEpisode?,
+                @JsonProperty("recommendations") val recommendations: RecommendationConnection?,
+        ) {
+            fun totalEpisodes(): Int {
+                return nextAiringEpisode?.episode?.minus(1)
+                        ?: episodes ?: throw Exception("Unable to calculate total episodes")
+            }
 
-        fun getCoverImage(): String? {
-            return coverImage.extraLarge ?: coverImage.large ?: coverImage.medium
+            fun getTitle(): String {
+                return title.english
+                        ?: title.romaji ?: throw Exception("Unable to calculate total episodes")
+            }
+
+            fun getCoverImage(): String? {
+                return coverImage.extraLarge ?: coverImage.large ?: coverImage.medium
+            }
         }
     }
 }

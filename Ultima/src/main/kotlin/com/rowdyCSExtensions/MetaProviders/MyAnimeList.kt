@@ -1,5 +1,6 @@
 package com.KillerDogeEmpire
 
+import android.util.Log
 import com.KillerDogeEmpire.UltimaMediaProvidersUtils.invokeExtractors
 import com.KillerDogeEmpire.UltimaUtils.Category
 import com.KillerDogeEmpire.UltimaUtils.LinkData
@@ -25,6 +26,8 @@ import com.lagradost.cloudstream3.newAnimeSearchResponse
 import com.lagradost.cloudstream3.newHomePageResponse
 import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.syncproviders.SyncIdName
+import com.lagradost.cloudstream3.syncproviders.providers.MALApi.MalAnime
+import com.lagradost.cloudstream3.syncproviders.providers.MALApi.Recommendations
 import com.lagradost.cloudstream3.utils.AppUtils
 import com.lagradost.cloudstream3.utils.ExtractorLink
 
@@ -45,25 +48,27 @@ class MyAnimeList(val plugin: UltimaPlugin) : MainAPI() {
         return mapper.writeValueAsString(this)
     }
 
-    private suspend fun MainPageRequest.toSearchResponseList(
-            page: Int
-    ): Pair<List<SearchResponse>, Boolean> {
+    private suspend fun malAPICall(query: String): MalApiResponse {
         val res =
-                app.get(
-                                "${this.data}${(page - 1) * mediaLimit}",
-                                headers = mapOf("Authorization" to "Bearer $auth")
-                        )
+                app.get(query, headers = mapOf("Authorization" to "Bearer $auth"))
                         .parsedSafe<MalApiResponse>()
                         ?: throw Exception("Unable to fetch content from API")
-        val data =
-                res.data?.map {
-                    newAnimeSearchResponse(it.node.title, "$mainUrl/${it.node.id}") {
-                        this.posterUrl = it.node.picture.large
-                    }
-                }
-                        ?: throw Exception("Unable to fetch content from API")
+        return res
+    }
 
-        return data to true
+    private suspend fun MalApiResponse.MalApiData.toSearchResponse(): SearchResponse {
+        val url = "$mainUrl/${this.node.id}"
+        val posterUrl = this.node.picture.large
+        val res = newAnimeSearchResponse(this.node.title, url) { this.posterUrl = posterUrl }
+        return res
+    }
+
+    private suspend fun Recommendations.toSearchResponse(): SearchResponse {
+        val node = this.node ?: throw Exception("Unable to parse Recommendation")
+        val url = "$mainUrl/${node.id}"
+        val posterUrl = node.main_picture?.large
+        val res = newAnimeSearchResponse(node.title, url) { this.posterUrl = posterUrl }
+        return res
     }
 
     override val mainPage =
@@ -80,8 +85,13 @@ class MyAnimeList(val plugin: UltimaPlugin) : MainAPI() {
                     "Personal" to "Personal"
             )
 
+    override suspend fun search(query: String): List<SearchResponse>? {
+        val res = malAPICall("$apiUrl/anime?q=$query&limit=$mediaLimit")
+        return res.data?.map { it.toSearchResponse() }
+    }
+
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        if (request.name.equals("Personal")) {
+        if (request.name.contains("Personal")) {
             // Reading and manipulating personal library
             api.loginInfo()
                     ?: return newHomePageResponse(
@@ -98,18 +108,26 @@ class MyAnimeList(val plugin: UltimaPlugin) : MainAPI() {
                     }
             return newHomePageResponse(homePageList, false)
         } else {
-            // Other new sections will be generated if toSearchResponseList() is
-            // overridden
-            val data = request.toSearchResponseList(page)
-            return newHomePageResponse(request.name, data.first, data.second)
+            val res = malAPICall("${request.data}${(page - 1) * mediaLimit}")
+            val media =
+                    res.data?.map { it.toSearchResponse() }
+                            ?: return newHomePageResponse(request.name, emptyList(), false)
+            return newHomePageResponse(request.name, media, true)
         }
     }
 
     override suspend fun load(url: String): LoadResponse {
         val id = url.removeSuffix("/").substringAfterLast("/")
-        val data = api.getResult(id) ?: throw ErrorLoadingException("Unable to fetch show details")
-        var year = data.startDate?.div(1000)?.div(86400)?.div(365)?.plus(1970)?.toInt()
-        val epCount = data.nextAiring?.episode?.minus(1) ?: data.totalEpisodes ?: 0
+        val data =
+                app.get(
+                                "$apiUrl/anime/$id?fields=id,title,synopsis,main_picture,start_season,num_episodes,recommendations,genres",
+                                headers = mapOf("Authorization" to "Bearer $auth")
+                        )
+                        .parsedSafe<MalAnime>()
+                        ?: throw ErrorLoadingException("Unable to fetch show details")
+        Log.d("rowdy", data.toString())
+        val year = data.startSeason?.year
+        val epCount = data.numEpisodes ?: 0
         val episodes =
                 (1..epCount).map { i ->
                     val linkData =
@@ -123,10 +141,18 @@ class MyAnimeList(val plugin: UltimaPlugin) : MainAPI() {
                                     .toStringData()
                     Episode(linkData, season = 1, episode = i)
                 }
-        return newAnimeLoadResponse(data.title ?: "", url, TvType.Anime) {
+        return newAnimeLoadResponse(
+                data.title ?: throw NotImplementedError("Unable to parse title"),
+                url,
+                TvType.Anime
+        ) {
+            this.year = data.startSeason?.year
+            this.posterUrl = data.mainPicture?.large
+            this.plot = data.synopsis
+            this.tags = data.genres?.map { it.name }
             addMalId(id.toInt())
             addEpisodes(DubStatus.Subbed, episodes)
-            this.recommendations = data.recommendations
+            this.recommendations = data.recommendations?.map { it.toSearchResponse() }
         }
     }
 
@@ -150,7 +176,7 @@ class MyAnimeList(val plugin: UltimaPlugin) : MainAPI() {
             data class MalApiNode(
                     @JsonProperty("id") val id: Int,
                     @JsonProperty("title") val title: String,
-                    @JsonProperty("main_picture") val picture: MalApiNodePicture,
+                    @JsonProperty("main_picture") val picture: MalApiNodePicture
             ) {
                 data class MalApiNodePicture(
                         @JsonProperty("medium") val medium: String,
