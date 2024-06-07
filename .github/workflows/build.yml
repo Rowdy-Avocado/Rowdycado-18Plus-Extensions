@@ -1,7 +1,7 @@
 name: Build
 
 # https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#concurrency
-concurrency: 
+concurrency:
   group: "build"
   cancel-in-progress: true
 
@@ -12,7 +12,7 @@ on:
       - master
       - main
     paths-ignore:
-      - '*.md'
+      - "*.md"
 
 permissions: write-all
 
@@ -30,7 +30,7 @@ jobs:
         with:
           ref: "builds"
           path: "builds"
-      
+
       - name: Clean old builds
         run: rm $GITHUB_WORKSPACE/builds/*.cs3
 
@@ -61,6 +61,8 @@ jobs:
           SUPERSTREAM_SECOND_API: ${{ secrets.SUPERSTREAM_SECOND_API }}
           SUPERSTREAM_THIRD_API: ${{ secrets.SUPERSTREAM_THIRD_API }}
           SUPERSTREAM_FOURTH_API: ${{ secrets.SUPERSTREAM_FOURTH_API }}
+          SIMKL_API: ${{ secrets.SIMKL_API }}
+          MAL_API: ${{ secrets.MAL_API }}
         run: |
           cd $GITHUB_WORKSPACE/src
           echo TMDB_API=$TMDB_API >> local.properties
@@ -80,7 +82,6 @@ jobs:
           echo SUPERSTREAM_SECOND_API=$SUPERSTREAM_SECOND_API >> local.properties
           echo SUPERSTREAM_THIRD_API=$SUPERSTREAM_THIRD_API >> local.properties
           echo SUPERSTREAM_FOURTH_API=$SUPERSTREAM_FOURTH_API >> local.properties
-
 
       - name: Build Plugins
         run: |
