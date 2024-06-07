@@ -9,6 +9,8 @@ import android.view.View
 import android.view.View.OnClickListener
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.lagradost.cloudstream3.CommonActivity.showToast
@@ -20,7 +22,7 @@ class UltimaReorder(val plugin: UltimaPlugin) : BottomSheetDialogFragment() {
     private var param1: String? = null
     private var param2: String? = null
     private val sm = UltimaStorageManager
-    private val providers = sm.fetchExtensions()
+    private val extensions = sm.fetchExtensions()
     private val res: Resources = plugin.resources ?: throw Exception("Unable to read resources")
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,6 +75,7 @@ class UltimaReorder(val plugin: UltimaPlugin) : BottomSheetDialogFragment() {
         saveBtn.setOnClickListener(
                 object : OnClickListener {
                     override fun onClick(btn: View) {
+                        sm.currentExtensions = extensions
                         plugin.reload(context)
                         showToast("Saved")
                         dismiss()
@@ -81,7 +84,93 @@ class UltimaReorder(val plugin: UltimaPlugin) : BottomSheetDialogFragment() {
         )
         // #endregion - building save button and its click listener
 
+        // #region - building list view for sections
+        val sectionsListView = settings.findView<LinearLayout>("section_list")
+        updateSectionList(sectionsListView, inflater, container)
+        // #region - building list view for sections
+
         return settings
+    }
+
+    private fun updateSectionList(
+            sectionsListView: LinearLayout,
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            focusingSection: Int? = null,
+            focusOn: String? = null
+    ) {
+        sectionsListView.removeAllViews()
+
+        var sections = emptyList<UltimaUtils.SectionInfo>()
+        extensions.forEach { it.sections?.forEach { if (it.enabled) sections += it } }
+
+        var counter = sections.size
+        sections.sortedByDescending { it.priority }.forEach {
+            val sectionView = getLayout("list_section_reorder_item", inflater, container)
+            val sectionName = sectionView.findView<TextView>("section_name")
+            val increaseBtn = sectionView.findView<ImageView>("increase")
+            val decreaseBtn = sectionView.findView<ImageView>("decrease")
+            increaseBtn.setImageDrawable(getDrawable("triangle"))
+            decreaseBtn.setImageDrawable(getDrawable("triangle"))
+            decreaseBtn.setRotation(180f)
+
+            it.priority = counter
+            sectionName.text = "${it.pluginName}: ${it.name}"
+
+            // configuring click listener for increase button
+            increaseBtn.makeTvCompatible()
+            increaseBtn.setOnClickListener(
+                    object : OnClickListener {
+                        override fun onClick(btn: View) {
+                            if (it.priority < sections.size) {
+                                val oldSection =
+                                        sections.find { s -> s.priority.equals(it.priority + 1) }
+                                                ?: throw Exception()
+                                oldSection.priority -= 1
+                                it.priority += 1
+                                updateSectionList(
+                                        sectionsListView,
+                                        inflater,
+                                        container,
+                                        it.priority,
+                                        "increase"
+                                )
+                            }
+                        }
+                    }
+            )
+
+            // configuring click listener for decrease button
+            decreaseBtn.makeTvCompatible()
+            decreaseBtn.setOnClickListener(
+                    object : OnClickListener {
+                        override fun onClick(btn: View) {
+                            if (it.priority > 1) {
+                                val oldSection =
+                                        sections.find { s -> s.priority.equals(it.priority - 1) }
+                                                ?: throw Exception()
+                                oldSection.priority += 1
+                                it.priority -= 1
+                                updateSectionList(
+                                        sectionsListView,
+                                        inflater,
+                                        container,
+                                        it.priority,
+                                        "decrease"
+                                )
+                            }
+                        }
+                    }
+            )
+            if (counter.equals(focusingSection))
+                    when (focusOn) {
+                        "increase" -> increaseBtn.requestFocus()
+                        "decrease" -> decreaseBtn.requestFocus()
+                        else -> {}
+                    }
+            counter -= 1
+            sectionsListView.addView(sectionView)
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.M)

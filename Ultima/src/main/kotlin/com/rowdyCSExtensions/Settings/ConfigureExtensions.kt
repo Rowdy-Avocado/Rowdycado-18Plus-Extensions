@@ -80,6 +80,7 @@ class UltimaConfigureExtensions(val plugin: UltimaPlugin) : BottomSheetDialogFra
                 object : OnClickListener {
                     override fun onClick(btn: View) {
                         plugin.reload(context)
+                        sm.currentExtensions = extensions
                         showToast("Saved")
                         dismiss()
                     }
@@ -118,51 +119,6 @@ class UltimaConfigureExtensions(val plugin: UltimaPlugin) : BottomSheetDialogFra
             container: ViewGroup?
     ): View {
 
-        fun configureCounterView(
-                section: UltimaUtils.SectionInfo,
-                counterLayout: LinearLayout,
-        ) {
-
-            // collecting required resources
-            val decreasePriorityBtn = counterLayout.findView<TextView>("decrease")
-            val priorityTextview = counterLayout.findView<TextView>("priority_count")
-            val increasePriorityBtn = counterLayout.findView<TextView>("increase")
-
-            // counter visible only if section enabled
-            counterLayout.visibility = if (section.enabled) View.VISIBLE else View.GONE
-            priorityTextview.text = section.priority.toString()
-
-            // configuring click listener for decrease button
-            decreasePriorityBtn.makeTvCompatible()
-            decreasePriorityBtn.setOnClickListener(
-                    object : OnClickListener {
-                        override fun onClick(btn: View) {
-                            val count = priorityTextview.text.toString().toInt()
-                            if (count > 1) {
-                                section.priority -= 1
-                                sm.currentExtensions = extensions
-                                priorityTextview.text = (count - 1).toString()
-                            }
-                        }
-                    }
-            )
-
-            // configuring click listener for increase button
-            increasePriorityBtn.makeTvCompatible()
-            increasePriorityBtn.setOnClickListener(
-                    object : OnClickListener {
-                        override fun onClick(btn: View) {
-                            val count = priorityTextview.text.toString().toInt()
-                            if (count < 50) {
-                                section.priority += 1
-                                sm.currentExtensions = extensions
-                                priorityTextview.text = (count + 1).toString()
-                            }
-                        }
-                    }
-            )
-        }
-
         fun buildSectionView(
                 section: UltimaUtils.SectionInfo,
                 inflater: LayoutInflater,
@@ -172,7 +128,6 @@ class UltimaConfigureExtensions(val plugin: UltimaPlugin) : BottomSheetDialogFra
             // collecting required resources
             val sectionView = getLayout("list_section_item", inflater, container)
             val childCheckBoxBtn = sectionView.findView<CheckBox>("section_checkbox")
-            val counterLayout = sectionView.findView<LinearLayout>("counter_layout")
 
             // building section checkbox and its click listener
             childCheckBoxBtn.text = section.name
@@ -185,35 +140,35 @@ class UltimaConfigureExtensions(val plugin: UltimaPlugin) : BottomSheetDialogFra
                                 isChecked: Boolean
                         ) {
                             section.enabled = isChecked
-                            sm.currentExtensions = extensions
-                            counterLayout.visibility = if (isChecked) View.VISIBLE else View.GONE
                         }
                     }
             )
-
-            // configure priority counter next to the section
-            configureCounterView(section, counterLayout)
 
             return sectionView
         }
 
         // collecting required resources
         val extensionLayoutView = getLayout("list_extension_item", inflater, container)
-        val extensionNameBtn = extensionLayoutView.findView<TextView>("extension_name")
+        val extensionDataBtn = extensionLayoutView.findView<LinearLayout>("extension_data")
+        val expandImage = extensionLayoutView.findView<ImageView>("expand_icon")
+        expandImage.setImageDrawable(getDrawable("triangle"))
+        val extensionNameBtn = extensionDataBtn.findView<TextView>("extension_name")
         val childList = extensionLayoutView.findView<LinearLayout>("sections_list")
 
         // building extension textview and its click listener
-        extensionNameBtn.text = "▶ " + extension.name
-        extensionNameBtn.makeTvCompatible()
-        extensionNameBtn.setOnClickListener(
+        expandImage.setRotation(90f)
+        extensionNameBtn.text = extension.name
+        extensionDataBtn.makeTvCompatible()
+
+        extensionDataBtn.setOnClickListener(
                 object : OnClickListener {
                     override fun onClick(btn: View) {
                         if (childList.visibility == View.VISIBLE) {
                             childList.visibility = View.GONE
-                            extensionNameBtn.text = "▶ " + extension.name
+                            expandImage.setRotation(90f)
                         } else {
                             childList.visibility = View.VISIBLE
-                            extensionNameBtn.text = "▼ " + extension.name
+                            expandImage.setRotation(180f)
                         }
                     }
                 }

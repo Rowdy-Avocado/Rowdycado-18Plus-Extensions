@@ -23,19 +23,17 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
     fun loadSections(): List<MainPageData> {
         sectionNamesList = emptyList()
         var data: List<MainPageData> = emptyList()
-        var savedSections: List<SectionInfo> = emptyList()
+        var enabledSections: List<SectionInfo> = emptyList()
         val savedPlugins = sm.currentExtensions
         savedPlugins.forEach { plugin ->
-            plugin.sections?.forEach { section -> savedSections += section }
+            plugin.sections?.forEach { section -> if (section.enabled) enabledSections += section }
         }
-        savedSections.sortedByDescending { it.priority }.forEach { section ->
-            if (section.enabled) {
-                data +=
-                        mainPageOf(
-                                "${mapper.writeValueAsString(section)}" to
-                                        "${buildSectionName(section)}"
-                        )
-            }
+        enabledSections.sortedByDescending { it.priority }.forEach { section ->
+            data +=
+                    mainPageOf(
+                            "${mapper.writeValueAsString(section)}" to
+                                    "${buildSectionName(section)}"
+                    )
         }
         if (data.size.equals(0)) return mainPageOf("" to "") else return data
     }
