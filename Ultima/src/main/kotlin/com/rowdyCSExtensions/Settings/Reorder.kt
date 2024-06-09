@@ -85,8 +85,9 @@ class UltimaReorder(val plugin: UltimaPlugin) : BottomSheetDialogFragment() {
         // #endregion - building save button and its click listener
 
         // #region - building list view for sections
+        val noSectionWarning = settings.findView<TextView>("no_section_warning")
         val sectionsListView = settings.findView<LinearLayout>("section_list")
-        updateSectionList(sectionsListView, inflater, container)
+        updateSectionList(sectionsListView, inflater, container, noSectionWarning)
         // #region - building list view for sections
 
         return settings
@@ -96,8 +97,9 @@ class UltimaReorder(val plugin: UltimaPlugin) : BottomSheetDialogFragment() {
             sectionsListView: LinearLayout,
             inflater: LayoutInflater,
             container: ViewGroup?,
+            noSectionWarning: TextView? = null,
             focusingSection: Int? = null,
-            focusOn: String? = null
+            focusOn: String? = null,
     ) {
         sectionsListView.removeAllViews()
 
@@ -105,6 +107,7 @@ class UltimaReorder(val plugin: UltimaPlugin) : BottomSheetDialogFragment() {
         extensions.forEach { it.sections?.forEach { if (it.enabled) sections += it } }
 
         var counter = sections.size
+        if (counter <= 0) noSectionWarning?.visibility = View.VISIBLE
         sections.sortedByDescending { it.priority }.forEach {
             val sectionView = getLayout("list_section_reorder_item", inflater, container)
             val sectionName = sectionView.findView<TextView>("section_name")
@@ -132,6 +135,7 @@ class UltimaReorder(val plugin: UltimaPlugin) : BottomSheetDialogFragment() {
                                         sectionsListView,
                                         inflater,
                                         container,
+                                        null,
                                         it.priority,
                                         "increase"
                                 )
@@ -155,6 +159,7 @@ class UltimaReorder(val plugin: UltimaPlugin) : BottomSheetDialogFragment() {
                                         sectionsListView,
                                         inflater,
                                         container,
+                                        null,
                                         it.priority,
                                         "decrease"
                                 )

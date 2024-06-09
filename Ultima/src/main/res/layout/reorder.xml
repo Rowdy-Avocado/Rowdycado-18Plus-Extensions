@@ -64,5 +64,16 @@
             android:paddingBottom="10dp">
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/no_section_warning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="20dp"
+            android:text="You have not enabled any section"
+            android:textSize="15sp"
+            android:gravity="center"
+            android:visibility="gone" />
+
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
