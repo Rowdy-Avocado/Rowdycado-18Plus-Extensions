@@ -19,7 +19,7 @@ import org.jsoup.Jsoup
 class RidomoviesMediaProvider : MediaProvider() {
     override val name = "Ridomovies"
     override val domain = "https://ridomovies.tv"
-    override val categories = listOf(Category.ANIME, Category.MEDIA)
+    override val categories = listOf(Category.MEDIA)
 
     override suspend fun loadContent(
             url: String,

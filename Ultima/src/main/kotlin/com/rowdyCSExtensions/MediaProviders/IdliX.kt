@@ -44,12 +44,12 @@ class IdliXMediaProvider : MediaProvider() {
                 } else {
                     "$url/episode/$fixTitle-season-${data.season}-episode-${data.episode}"
                 }
-        wpMoviesExtractor(name, mediaUrl, data, subtitleCallback, callback, encrypt = true)
+        wpMoviesExtractor(name, mediaUrl, subtitleCallback, callback, encrypt = true)
     }
+
     private suspend fun wpMoviesExtractor(
             providerName: String?,
             url: String?,
-            data: LinkData,
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit,
             fixIframe: Boolean = false,

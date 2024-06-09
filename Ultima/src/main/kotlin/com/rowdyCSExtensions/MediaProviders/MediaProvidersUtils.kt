@@ -12,7 +12,22 @@ import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
 import java.net.URI
+import java.net.URL
 
+abstract class MediaProvider {
+    abstract val name: String
+    abstract val domain: String
+    abstract val categories: List<Category>
+
+    abstract suspend fun loadContent(
+            url: String,
+            data: LinkData,
+            subtitleCallback: (SubtitleFile) -> Unit,
+            callback: (ExtractorLink) -> Unit
+    )
+}
+
+@OptIn(kotlin.ExperimentalStdlibApi::class)
 object UltimaMediaProvidersUtils {
     val mediaProviders =
             listOf<MediaProvider>(
@@ -21,7 +36,12 @@ object UltimaMediaProvidersUtils {
                     IdliXMediaProvider(),
                     MoflixMediaProvider(),
                     RidomoviesMediaProvider(),
-                    VidsrcToMediaProvider()
+                    VidsrcToMediaProvider(),
+                    NowTvMediaProvider(),
+                    DahmerMoviesMediaProvider(),
+                    NoverseMediaProvider(),
+                    AllMovielandMediaProvider(),
+                    TwoEmbedMediaProvider()
             )
 
     suspend fun invokeExtractors(
@@ -47,12 +67,76 @@ object UltimaMediaProvidersUtils {
         Vidplay,
         Filemoon,
         Jeniusplay,
+        Uqload,
         Custom,
         NONE
     }
 
     fun getBaseUrl(url: String): String {
         return URI(url).let { "${it.scheme}://${it.host}" }
+    }
+
+    fun getEpisodeSlug(
+            season: Int? = null,
+            episode: Int? = null,
+    ): Pair<String, String> {
+        return if (season == null && episode == null) {
+            "" to ""
+        } else {
+            (if (season!! < 10) "0$season" else "$season") to
+                    (if (episode!! < 10) "0$episode" else "$episode")
+        }
+    }
+
+    fun getIndexQuality(str: String?): Int {
+        return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
+                ?: Qualities.Unknown.value
+    }
+
+    fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {
+        return if (fullTag)
+                Regex("(?i)(.*)\\.(?:mkv|mp4|avi)").find(str ?: "")?.groupValues?.get(1)?.trim()
+                        ?: str ?: ""
+        else
+                Regex("(?i)\\d{3,4}[pP]\\.?(.*?)\\.(mkv|mp4|avi)")
+                        .find(str ?: "")
+                        ?.groupValues
+                        ?.getOrNull(1)
+                        ?.replace(".", " ")
+                        ?.trim()
+                        ?: str ?: ""
+    }
+
+    fun String.encodeUrl(): String {
+        val url = URL(this)
+        val uri = URI(url.protocol, url.userInfo, url.host, url.port, url.path, url.query, url.ref)
+        return uri.toURL().toString()
+    }
+
+    fun String?.createSlug(): String? {
+        return this?.filter { it.isWhitespace() || it.isLetterOrDigit() }
+                ?.trim()
+                ?.replace("\\s+".toRegex(), "-")
+                ?.lowercase()
+    }
+
+    fun fixUrl(url: String, domain: String): String {
+        if (url.startsWith("http")) {
+            return url
+        }
+        if (url.isEmpty()) {
+            return ""
+        }
+
+        val startsWithNoHttp = url.startsWith("//")
+        if (startsWithNoHttp) {
+            return "https:$url"
+        } else {
+            if (url.startsWith('/')) {
+                return domain + url
+            }
+            return "$domain/$url"
+        }
     }
 
     // #region - Main Link Handler
@@ -65,7 +149,8 @@ object UltimaMediaProvidersUtils {
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit,
             quality: Int = Qualities.Unknown.value,
-            isM3u8: Boolean = false
+            isM3u8: Boolean = false,
+            tag: String? = null
     ) {
         try {
             val domain = referer ?: getBaseUrl(url)
@@ -82,15 +167,17 @@ object UltimaMediaProvidersUtils {
                 ServerName.Mp4upload ->
                         AnyMp4Upload(providerName, dubStatus, domain)
                                 .getUrl(url, domain, subtitleCallback, callback)
-                ServerName.Jeniusplay -> {
-                    AnyJeniusplay(providerName, dubStatus, domain)
-                            .getUrl(url, domain, subtitleCallback, callback)
-                }
+                ServerName.Jeniusplay ->
+                        AnyJeniusplay(providerName, dubStatus, domain)
+                                .getUrl(url, domain, subtitleCallback, callback)
+                ServerName.Uqload ->
+                        AnyUqload(providerName, dubStatus, domain)
+                                .getUrl(url, domain, subtitleCallback, callback)
                 ServerName.Custom -> {
                     callback.invoke(
                             ExtractorLink(
                                     providerName ?: return,
-                                    providerName,
+                                    tag?.let { "$providerName: $it" } ?: providerName,
                                     url,
                                     domain,
                                     quality,
@@ -105,19 +192,6 @@ object UltimaMediaProvidersUtils {
         } catch (e: Exception) {}
     }
     // #endregion - Main Link Handler
-}
-
-abstract class MediaProvider {
-    abstract val name: String
-    abstract val domain: String
-    abstract val categories: List<Category>
-
-    abstract suspend fun loadContent(
-            url: String,
-            data: LinkData,
-            subtitleCallback: (SubtitleFile) -> Unit,
-            callback: (ExtractorLink) -> Unit
-    )
 }
 
 // #region - Custom Extractors
@@ -163,6 +237,15 @@ class AnyJeniusplay(provider: String?, dubType: String?, domain: String = "") : 
                     "JeniusPlay" +
                     (if (dubType != null) ": $dubType" else "")
     override var mainUrl = domain
+    override val requiresReferer = false
+}
+
+class AnyUqload(provider: String?, dubType: String?, domain: String = "") : Filesim() {
+    override val name =
+            (if (provider != null) "$provider: " else "") +
+                    "Uqloads" +
+                    (if (dubType != null) ": $dubType" else "")
+    override val mainUrl = domain
     override val requiresReferer = false
 }
 // #endregion - Custom Extractors
