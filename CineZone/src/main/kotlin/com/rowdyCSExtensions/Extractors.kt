@@ -20,12 +20,13 @@ class CineZoneExtractor : ExtractorApi() {
     ) {
         val serverName = referer
         if (url.isNotEmpty()) {
-            when (serverName) {
-                null -> {}
-                "filemoon" -> FileMoon().getUrl(url, null, subtitleCallback, callback)
-                "vidplay" -> Vidplay2().getUrl(url, referer, subtitleCallback, callback)
-                else -> loadExtractor(url, subtitleCallback, callback)
-            }
+            try {
+                when (serverName) {
+                    "filemoon" -> FileMoon().getUrl(url, null, subtitleCallback, callback)
+                    "vidplay" -> Vidplay2().getUrl(url, referer, subtitleCallback, callback)
+                    else -> loadExtractor(url, subtitleCallback, callback)
+                }
+            } catch (e: Exception) {}
         }
     }
 }
