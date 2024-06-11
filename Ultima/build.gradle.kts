@@ -1,12 +1,10 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
 dependencies {
-    implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
 }
 // use an integer for version numbers
-version = 21
+version = 22
 
 
 cloudstream {

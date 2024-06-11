@@ -41,7 +41,9 @@ object UltimaMediaProvidersUtils {
                     DahmerMoviesMediaProvider(),
                     NoverseMediaProvider(),
                     AllMovielandMediaProvider(),
-                    TwoEmbedMediaProvider()
+                    TwoEmbedMediaProvider(),
+                    EMoviesMediaProvider(),
+                    MultiEmbededAPIProvider()
             )
 
     suspend fun invokeExtractors(

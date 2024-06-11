@@ -11,7 +11,7 @@ import kotlin.collections.forEach
 
 class Ultima(val plugin: UltimaPlugin) : MainAPI() {
     override var name = "Ultima"
-    override var supportedTypes = TvType.values().toSet()
+    override var supportedTypes = setOf(TvType.Movie, TvType.TvSeries, TvType.Anime)
     override var lang = "en"
     override val hasMainPage = true
     override val hasQuickSearch = false

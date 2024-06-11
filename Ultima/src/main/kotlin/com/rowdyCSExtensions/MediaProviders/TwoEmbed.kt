@@ -40,7 +40,6 @@ class TwoEmbedMediaProvider : MediaProvider() {
                 subtitleCallback,
                 callback
         )
-        // loadExtractor("https://uqloads.xyz/e/$id", "$ref/", subtitleCallback, callback)
     }
 
     // #region - Encryption and Decryption handlers
