@@ -95,7 +95,7 @@ class AniList(val plugin: UltimaPlugin) : MainAPI() {
     override suspend fun search(query: String): List<SearchResponse>? {
         val res =
                 anilistAPICall(
-                        "query (\$search: String = \"Attack On Titan\") { Page(page: 1, perPage: $mediaLimit) { pageInfo { total perPage currentPage lastPage hasNextPage } media(search: \$search, isAdult: $isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }"
+                        "query (\$search: String = \"$query\") { Page(page: 1, perPage: $mediaLimit) { pageInfo { total perPage currentPage lastPage hasNextPage } media(search: \$search, isAdult: $isAdult, type: ANIME) { id idMal season seasonYear format episodes chapters title { english romaji } coverImage { extraLarge large medium } synonyms nextAiringEpisode { timeUntilAiring episode } } } }"
                 )
         return res.data.page?.media?.map { it.toSearchResponse() }
     }
