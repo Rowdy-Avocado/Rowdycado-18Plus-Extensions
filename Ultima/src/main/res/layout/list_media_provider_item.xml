@@ -12,7 +12,8 @@
         android:padding="10dp"
         android:text="provider"
         android:textSize="15sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:focusable="true"/>
 
 
     <LinearLayout
@@ -36,7 +37,8 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:padding="5dp"
-            android:layout_rowWeight="1" />
+            android:layout_rowWeight="1"
+            android:focusable="true" />
     </LinearLayout>
 
 </LinearLayout>

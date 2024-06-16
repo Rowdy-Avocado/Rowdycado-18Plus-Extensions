@@ -68,7 +68,8 @@
             android:layout_height="wrap_content"
             android:textSize="17sp"
             android:padding="5dp"
-            android:text="Include extension name on home screen" />
+            android:text="Include extension name on home screen"
+            android:focusable="true" />
 
         <LinearLayout
             android:id="@+id/extensions_list"
