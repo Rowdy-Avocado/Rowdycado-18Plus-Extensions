@@ -174,6 +174,7 @@ class UltimaConfigureWatchSync(val plugin: UltimaPlugin) : BottomSheetDialogFrag
                                         if (syncThisDeviceBtn.isChecked) it.registerThisDevice()
                                         else it.deregisterThisDevice()
                                 showToast(res.second)
+                                if (res.first) dismiss()
                             }
                         }
                     }

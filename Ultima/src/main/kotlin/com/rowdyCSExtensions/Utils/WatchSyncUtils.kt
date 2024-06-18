@@ -127,6 +127,7 @@ object WatchSyncUtils {
             if (res.data.delItem?.deletedItemId.equals(itemId)) {
                 itemId = null
                 deviceId = null
+                isThisDeviceSync = false
                 sm.deviceSyncCreds = this
                 return true to "Device de-registered"
             } else return failure

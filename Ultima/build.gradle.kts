@@ -4,7 +4,7 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
 }
 // use an integer for version numbers
-version = 25
+version = 26
 
 
 cloudstream {

@@ -24,7 +24,7 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
     fun loadSections(): List<MainPageData> {
         sectionNamesList = emptyList()
         var data: List<MainPageData> = emptyList()
-        data += mainPageOf("watch_sync" to "watch_sync")
+        data += mainPageOf("" to "watch_sync")
         var enabledSections: List<SectionInfo> = emptyList()
         val savedPlugins = sm.currentExtensions
         savedPlugins.forEach { plugin ->
@@ -95,7 +95,10 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
-        val enabledPlugins = mainPage.map { AppUtils.parseJson<SectionInfo>(it.data).pluginName }
+        val enabledPlugins =
+                mainPage.filter { !it.name.equals("watch_sync") }.map {
+                    AppUtils.parseJson<SectionInfo>(it.data).pluginName
+                }
         val provider = allProviders.filter { it.name in enabledPlugins }
         for (i in 0 until (provider.size)) {
             try {
