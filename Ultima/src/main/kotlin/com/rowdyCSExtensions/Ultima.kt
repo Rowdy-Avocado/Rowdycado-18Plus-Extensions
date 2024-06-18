@@ -1,6 +1,5 @@
 package com.KillerDogeEmpire
 
-import android.util.Log
 import com.KillerDogeEmpire.UltimaUtils.SectionInfo
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.lagradost.cloudstream3.*
@@ -59,7 +58,6 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
         if (!request.name.isNullOrEmpty()) {
             try {
                 if (request.name.equals("watch_sync")) {
-                    Log.d("rowdy sync data", sm.deviceSyncCreds.toString())
                     val res =
                             sm.deviceSyncCreds
                                     ?.fetchDevices()
@@ -68,9 +66,10 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
                                                 ?: false
                                     }
                                     ?.map {
-                                        Log.d("rowdy deviceId", it.deviceId)
-                                        Log.d("rowdy itemId", it.itemId)
-                                        HomePageList(it.name, it.syncedData ?: emptyList())
+                                        HomePageList(
+                                                "Continue from: ${it.name}",
+                                                it.syncedData ?: emptyList()
+                                        )
                                     }
                                     ?: return null
                     return newHomePageResponse(res, false)
