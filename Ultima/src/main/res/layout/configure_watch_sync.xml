@@ -25,7 +25,7 @@
                 android:layout_rowWeight="1"
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="5dp"
-                android:text="Meta Providers"
+                android:text="Sync watch history"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
@@ -57,22 +57,56 @@
             android:layout_marginBottom="10dp"
             android:layout_marginTop="10dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_rowWeight="1"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:text="Meta Services"
-            android:textSize="18sp" />
-
         <LinearLayout
-            android:id="@+id/meta_providers_list"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="10dp">
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_rowWeight="1"
+                android:text="login data"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="right">
+
+                <ImageView
+                    android:id="@+id/watch_sync_creds_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="5dp"
+                    android:focusable="true" />
+
+            </LinearLayout>
+
         </LinearLayout>
+
+        <ImageView
+            android:src="@android:drawable/divider_horizontal_dark"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:scaleType="fitXY"
+            android:paddingLeft="2dp"
+            android:paddingRight="2dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginTop="10dp" />
+
+        <Switch
+            android:id="@+id/sync_this_device"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="17sp"
+            android:padding="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:text="Sync this device"
+            android:focusable="true" />
 
         <ImageView
             android:src="@android:drawable/divider_horizontal_dark"
@@ -87,14 +121,11 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_rowWeight="1"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:text="Media Sources"
+            android:text="Devices"
             android:textSize="18sp" />
 
         <LinearLayout
-            android:id="@+id/media_providers_list"
+            android:id="@+id/devices_list"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"

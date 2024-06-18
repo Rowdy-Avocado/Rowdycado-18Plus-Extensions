@@ -1,6 +1,5 @@
 package com.KillerDogeEmpire
 
-import android.util.Log
 import com.KillerDogeEmpire.UltimaMediaProvidersUtils.ServerName
 import com.KillerDogeEmpire.UltimaMediaProvidersUtils.getEpisodeSlug
 import com.KillerDogeEmpire.UltimaUtils.Category
@@ -22,7 +21,6 @@ class NowTvMediaProvider : MediaProvider() {
             callback: (ExtractorLink) -> Unit
     ) {
         suspend fun String.isSuccess(): Boolean {
-            Log.d("rowdy 1", this)
             return app.get(this, referer = referer).isSuccessful
         }
 

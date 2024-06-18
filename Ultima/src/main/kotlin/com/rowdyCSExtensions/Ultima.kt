@@ -1,5 +1,6 @@
 package com.KillerDogeEmpire
 
+import android.util.Log
 import com.KillerDogeEmpire.UltimaUtils.SectionInfo
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.lagradost.cloudstream3.*
@@ -16,6 +17,7 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
     override val hasMainPage = true
     override val hasQuickSearch = false
     private val sm = UltimaStorageManager
+    private val deviceSyncData = sm.deviceSyncCreds
 
     val mapper = jacksonObjectMapper()
     var sectionNamesList: List<String> = emptyList()
@@ -23,6 +25,7 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
     fun loadSections(): List<MainPageData> {
         sectionNamesList = emptyList()
         var data: List<MainPageData> = emptyList()
+        data += mainPageOf("watch_sync" to "watch_sync")
         var enabledSections: List<SectionInfo> = emptyList()
         val savedPlugins = sm.currentExtensions
         savedPlugins.forEach { plugin ->
@@ -52,18 +55,37 @@ class Ultima(val plugin: UltimaPlugin) : MainAPI() {
     override val mainPage = loadSections()
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
+        sm.deviceSyncCreds?.syncThisDevice()
         if (!request.name.isNullOrEmpty()) {
             try {
-                val realSection: SectionInfo = AppUtils.parseJson<SectionInfo>(request.data)
-                val provider = allProviders.find { it.name == realSection.pluginName }
-                return provider?.getMainPage(
-                        page,
-                        MainPageRequest(
-                                request.name,
-                                realSection.url.toString(),
-                                request.horizontalImages
-                        )
-                )
+                if (request.name.equals("watch_sync")) {
+                    Log.d("rowdy sync data", sm.deviceSyncCreds.toString())
+                    val res =
+                            sm.deviceSyncCreds
+                                    ?.fetchDevices()
+                                    ?.filter {
+                                        deviceSyncData?.enabledDevices?.contains(it.deviceId)
+                                                ?: false
+                                    }
+                                    ?.map {
+                                        Log.d("rowdy deviceId", it.deviceId)
+                                        Log.d("rowdy itemId", it.itemId)
+                                        HomePageList(it.name, it.syncedData ?: emptyList())
+                                    }
+                                    ?: return null
+                    return newHomePageResponse(res, false)
+                } else {
+                    val realSection: SectionInfo = AppUtils.parseJson<SectionInfo>(request.data)
+                    val provider = allProviders.find { it.name == realSection.pluginName }
+                    return provider?.getMainPage(
+                            page,
+                            MainPageRequest(
+                                    request.name,
+                                    realSection.url.toString(),
+                                    request.horizontalImages
+                            )
+                    )
+                }
             } catch (e: Throwable) {
                 return null
             }

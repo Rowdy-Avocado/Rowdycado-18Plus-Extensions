@@ -144,6 +144,25 @@ class UltimaSettings(val plugin: UltimaPlugin) : BottomSheetDialogFragment() {
         )
         // #endregion - building reorder button and its click listener
 
+        // #region - building reorder button and its click listener
+        val watchSyncBtn = settings.findView<ImageView>("watch_sync_img")
+        watchSyncBtn.setImageDrawable(getDrawable("edit_icon"))
+        watchSyncBtn.makeTvCompatible()
+        watchSyncBtn.setOnClickListener(
+                object : OnClickListener {
+                    override fun onClick(btn: View) {
+                        val reorder = UltimaConfigureWatchSync(plugin)
+                        reorder.show(
+                                activity?.supportFragmentManager
+                                        ?: throw Exception("Unable to open reorder settings"),
+                                ""
+                        )
+                        dismiss()
+                    }
+                }
+        )
+        // #endregion - building reorder button and its click listener
+
         // #region - building delete button with its click listener
         val deleteIconId = res.getIdentifier("delete_icon", "drawable", "com.KillerDogeEmpire")
         val deleteBtn = settings.findView<ImageView>("delete_img")

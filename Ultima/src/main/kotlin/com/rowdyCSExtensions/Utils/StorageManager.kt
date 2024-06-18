@@ -5,6 +5,7 @@ package com.KillerDogeEmpire
 import com.KillerDogeEmpire.UltimaUtils.ExtensionInfo
 import com.KillerDogeEmpire.UltimaUtils.MediaProviderState
 import com.KillerDogeEmpire.UltimaUtils.SectionInfo
+import com.KillerDogeEmpire.WatchSyncUtils.WatchSyncCreds
 import com.lagradost.cloudstream3.APIHolder.allProviders
 import com.lagradost.cloudstream3.AcraApplication.Companion.getKey
 import com.lagradost.cloudstream3.AcraApplication.Companion.setKey
@@ -37,6 +38,12 @@ object UltimaStorageManager {
             setKey("ULTIMA_CURRENT_MEDIA_PROVIDERS", value)
         }
 
+    var deviceSyncCreds: WatchSyncCreds?
+        get() = getKey("ULTIMA_WATCH_SYNC_CREDS")
+        set(value) {
+            setKey("ULTIMA_WATCH_SYNC_CREDS", value)
+        }
+
     // #endregion - custom data variables
 
     fun deleteAllData() {
@@ -46,6 +53,7 @@ object UltimaStorageManager {
                         "ULTIMA_EXTENSIONS_LIST",
                         "ULTIMA_CURRENT_META_PROVIDERS",
                         "ULTIMA_CURRENT_MEDIA_PROVIDERS",
+                        "ULTIMA_WATCH_SYNC_CREDS"
                 )
                 .forEach { setKey(it, null) }
     }

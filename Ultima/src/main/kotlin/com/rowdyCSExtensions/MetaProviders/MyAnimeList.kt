@@ -1,6 +1,5 @@
 package com.KillerDogeEmpire
 
-import android.util.Log
 import com.KillerDogeEmpire.UltimaMediaProvidersUtils.invokeExtractors
 import com.KillerDogeEmpire.UltimaUtils.Category
 import com.KillerDogeEmpire.UltimaUtils.LinkData
@@ -125,7 +124,6 @@ class MyAnimeList(val plugin: UltimaPlugin) : MainAPI() {
                         )
                         .parsedSafe<MalAnime>()
                         ?: throw ErrorLoadingException("Unable to fetch show details")
-        Log.d("rowdy", data.toString())
         val year = data.startSeason?.year
         val epCount = data.numEpisodes ?: 0
         val episodes =
