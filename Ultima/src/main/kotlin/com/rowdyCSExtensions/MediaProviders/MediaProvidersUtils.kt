@@ -7,6 +7,8 @@ import com.lagradost.cloudstream3.amap
 import com.lagradost.cloudstream3.extractors.Filesim
 import com.lagradost.cloudstream3.extractors.Jeniusplay
 import com.lagradost.cloudstream3.extractors.Mp4Upload
+import com.lagradost.cloudstream3.extractors.StreamWishExtractor
+import com.lagradost.cloudstream3.extractors.VidhideExtractor
 import com.lagradost.cloudstream3.extractors.Vidplay
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
@@ -43,7 +45,8 @@ object UltimaMediaProvidersUtils {
                     AllMovielandMediaProvider(),
                     TwoEmbedMediaProvider(),
                     EMoviesMediaProvider(),
-                    MultiEmbededAPIProvider()
+                    MultiEmbededAPIProvider(),
+                    MultiMoviesProvider()
             )
 
     suspend fun invokeExtractors(
@@ -70,6 +73,8 @@ object UltimaMediaProvidersUtils {
         Filemoon,
         Jeniusplay,
         Uqload,
+        StreamWish,
+        Vidhide,
         Custom,
         NONE
     }
@@ -175,6 +180,12 @@ object UltimaMediaProvidersUtils {
                 ServerName.Uqload ->
                         AnyUqload(providerName, dubStatus, domain)
                                 .getUrl(url, domain, subtitleCallback, callback)
+                ServerName.StreamWish ->
+                    AnyStreamwish(providerName, dubStatus, domain)
+                        .getUrl(url, domain, subtitleCallback, callback)
+                ServerName.Vidhide ->
+                    AnyVidhide(providerName, dubStatus, domain)
+                        .getUrl(url, domain, subtitleCallback, callback)
                 ServerName.Custom -> {
                     callback.invoke(
                             ExtractorLink(
@@ -224,6 +235,7 @@ class AnyVidplay(provider: String?, dubType: String?, domain: String = "") : Vid
     override val requiresReferer = false
 }
 
+
 class AnyMp4Upload(provider: String?, dubType: String?, domain: String = "") : Mp4Upload() {
     override var name =
             (if (provider != null) "$provider: " else "") +
@@ -248,6 +260,24 @@ class AnyUqload(provider: String?, dubType: String?, domain: String = "") : File
                     "Uqloads" +
                     (if (dubType != null) ": $dubType" else "")
     override val mainUrl = domain
+    override val requiresReferer = false
+}
+
+class AnyStreamwish(provider: String?, dubType: String?, domain: String = "") : StreamWishExtractor() {
+    override var name =
+        (if (provider != null) "$provider: " else "") +
+                "SteamWish" +
+                (if (dubType != null) ": $dubType" else "")
+    override var mainUrl = domain
+    override val requiresReferer = false
+}
+
+class AnyVidhide(provider: String?, dubType: String?, domain: String = "") : VidhideExtractor() {
+    override var name =
+        (if (provider != null) "$provider: " else "") +
+                "Vidhide" +
+                (if (dubType != null) ": $dubType" else "")
+    override var mainUrl = domain
     override val requiresReferer = false
 }
 // #endregion - Custom Extractors
