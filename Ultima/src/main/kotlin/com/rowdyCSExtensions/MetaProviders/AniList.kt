@@ -1,5 +1,6 @@
 package com.KillerDogeEmpire
 
+import android.util.Log
 import com.KillerDogeEmpire.UltimaMediaProvidersUtils.invokeExtractors
 import com.KillerDogeEmpire.UltimaUtils.Category
 import com.KillerDogeEmpire.UltimaUtils.LinkData
@@ -55,8 +56,10 @@ class AniList(val plugin: UltimaPlugin) : MainAPI() {
 
     private suspend fun anilistAPICall(query: String): AnilistAPIResponse {
         val data = mapOf("query" to query)
+        val test = app.post(apiUrl, headers = headerJSON, data = data)
+        Log.d("rowdy", test.text)
         val res =
-                app.post(apiUrl, headers = headerJSON, data = data).parsedSafe<AnilistAPIResponse>()
+                test.parsedSafe<AnilistAPIResponse>()
                         ?: throw Exception("Unable to fetch or parse Anilist api response")
         return res
     }
@@ -204,7 +207,7 @@ class AniList(val plugin: UltimaPlugin) : MainAPI() {
                 @JsonProperty("genres") val genres: List<String>,
                 @JsonProperty("description") val description: String?,
                 @JsonProperty("coverImage") val coverImage: CoverImage,
-                @JsonProperty("bannerImage") val bannerImage: String,
+                @JsonProperty("bannerImage") val bannerImage: String?,
                 @JsonProperty("nextAiringEpisode") val nextAiringEpisode: SeasonNextAiringEpisode?,
                 @JsonProperty("recommendations") val recommendations: RecommendationConnection?,
         ) {
