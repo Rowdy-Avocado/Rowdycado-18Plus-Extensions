@@ -13,6 +13,7 @@ import com.lagradost.cloudstream3.extractors.Vidplay
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
+import com.rowdyCSExtensions.ExtractorProviders.Mdrive
 import java.net.URI
 import java.net.URL
 
@@ -46,7 +47,8 @@ object UltimaMediaProvidersUtils {
                     TwoEmbedMediaProvider(),
                     EMoviesMediaProvider(),
                     MultiEmbededAPIProvider(),
-                    MultiMoviesProvider()
+                    MultiMoviesProvider(),
+                    MoviesDriveProvider(),
             )
 
     suspend fun invokeExtractors(
@@ -75,6 +77,7 @@ object UltimaMediaProvidersUtils {
         Uqload,
         StreamWish,
         Vidhide,
+        Mdrive,
         Custom,
         NONE
     }
@@ -186,6 +189,9 @@ object UltimaMediaProvidersUtils {
                 ServerName.Vidhide ->
                     AnyVidhide(providerName, dubStatus, domain)
                         .getUrl(url, domain, subtitleCallback, callback)
+                ServerName.Mdrive ->
+                    AnyMdrive(providerName, dubStatus, domain)
+                        .getUrl(url, domain, subtitleCallback, callback)
                 ServerName.Custom -> {
                     callback.invoke(
                             ExtractorLink(
@@ -280,4 +286,14 @@ class AnyVidhide(provider: String?, dubType: String?, domain: String = "") : Vid
     override var mainUrl = domain
     override val requiresReferer = false
 }
+
+class AnyMdrive(provider: String?, dubType: String?, domain: String = "") : Mdrive() {
+    override var name =
+        (if (provider != null) "$provider: " else "") +
+                "Mdrive" +
+                (if (dubType != null) ": $dubType" else "")
+    override var mainUrl = domain
+    override val requiresReferer = false
+}
+
 // #endregion - Custom Extractors
