@@ -25,7 +25,6 @@ class MoviesDriveProvider : MediaProvider() {
         val title=data.title
         val season=data.season
         val episode=data.episode
-        Log.d("Phisher",data.toString())
         try {
             val fixTitle = title.createSlug()
             val mediaurl = "$url/$fixTitle"
@@ -34,7 +33,6 @@ class MoviesDriveProvider : MediaProvider() {
                 document.select("h5 > a").map {
                     val link = it.attr("href")
                     val urls = ExtractMdrive(link)
-                    Log.d("Phisher",urls.toString())
                     urls.forEach { servers ->
                         val domain= getBaseUrl(servers)
                         when(domain) {
@@ -64,7 +62,6 @@ class MoviesDriveProvider : MediaProvider() {
                             }
                             linklist.forEach { url ->
                                 val links = ExtractMdriveSeries(url)
-                                Log.d("Phisher",links.toString())
                                 links.forEach { link ->
                                     val domain= getBaseUrl(link)
                                     when(domain) {
