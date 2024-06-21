@@ -12,6 +12,7 @@ import com.lagradost.cloudstream3.extractors.StreamWishExtractor
 import com.lagradost.cloudstream3.extractors.VidhideExtractor
 import com.lagradost.cloudstream3.extractors.Vidplay
 import com.lagradost.cloudstream3.extractors.helper.GogoHelper
+import com.KillerDogeEmpire.MoviesDriveProvider.Mdrive
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
@@ -49,7 +50,8 @@ object UltimaMediaProvidersUtils {
                     EMoviesMediaProvider(),
                     MultiEmbededAPIProvider(),
                     MultiMoviesProvider(),
-                    AnitakuMediaProvider()
+                    AnitakuMediaProvider(),
+                    MoviesDriveProvider()
             )
 
     suspend fun invokeExtractors(
@@ -80,6 +82,7 @@ object UltimaMediaProvidersUtils {
         Vidhide,
         DoodStream,
         Gogo,
+        MDrive,
         Custom,
         NONE
     }
@@ -213,6 +216,9 @@ object UltimaMediaProvidersUtils {
                             isUsingAdaptiveData = true
                     )
                 }
+                ServerName.MDrive ->
+                    AnyMDrive(providerName, dubStatus, domain)
+                        .getUrl(url, domain, subtitleCallback, callback)
                 ServerName.Custom -> {
                     callback.invoke(
                             ExtractorLink(
@@ -314,6 +320,15 @@ class AnyDoodExtractor(provider: String?, dubType: String?, domain: String = "")
             (if (provider != null) "$provider: " else "") +
                     "DoodStream" +
                     (if (dubType != null) ": $dubType" else "")
+    override var mainUrl = domain
+    override val requiresReferer = false
+}
+
+class AnyMDrive(provider: String?, dubType: String?, domain: String = "") : Mdrive() {
+    override var name =
+        (if (provider != null) "$provider: " else "") +
+                "MDrive" +
+                (if (dubType != null) ": $dubType" else "")
     override var mainUrl = domain
     override val requiresReferer = false
 }
