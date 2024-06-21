@@ -46,7 +46,9 @@ object UltimaMediaProvidersUtils {
                     TwoEmbedMediaProvider(),
                     EMoviesMediaProvider(),
                     MultiEmbededAPIProvider(),
-                    MultiMoviesProvider()
+                    MultiMoviesProvider(),
+                    AnitakuMediaProvider(),
+                    MoviesDriveProvider()
             )
 
     suspend fun invokeExtractors(
