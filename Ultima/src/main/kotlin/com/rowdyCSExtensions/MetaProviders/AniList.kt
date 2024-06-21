@@ -1,6 +1,5 @@
 package com.KillerDogeEmpire
 
-import android.util.Log
 import com.KillerDogeEmpire.UltimaMediaProvidersUtils.invokeExtractors
 import com.KillerDogeEmpire.UltimaUtils.Category
 import com.KillerDogeEmpire.UltimaUtils.LinkData
@@ -57,7 +56,6 @@ class AniList(val plugin: UltimaPlugin) : MainAPI() {
     private suspend fun anilistAPICall(query: String): AnilistAPIResponse {
         val data = mapOf("query" to query)
         val test = app.post(apiUrl, headers = headerJSON, data = data)
-        Log.d("rowdy", test.text)
         val res =
                 test.parsedSafe<AnilistAPIResponse>()
                         ?: throw Exception("Unable to fetch or parse Anilist api response")
