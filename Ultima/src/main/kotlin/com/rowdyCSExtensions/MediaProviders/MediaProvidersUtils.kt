@@ -4,14 +4,12 @@ import com.KillerDogeEmpire.UltimaUtils.Category
 import com.KillerDogeEmpire.UltimaUtils.LinkData
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.amap
-import com.lagradost.cloudstream3.extractors.DoodLaExtractor
 import com.lagradost.cloudstream3.extractors.Filesim
 import com.lagradost.cloudstream3.extractors.Jeniusplay
 import com.lagradost.cloudstream3.extractors.Mp4Upload
 import com.lagradost.cloudstream3.extractors.StreamWishExtractor
 import com.lagradost.cloudstream3.extractors.VidhideExtractor
 import com.lagradost.cloudstream3.extractors.Vidplay
-import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
@@ -48,8 +46,7 @@ object UltimaMediaProvidersUtils {
                     TwoEmbedMediaProvider(),
                     EMoviesMediaProvider(),
                     MultiEmbededAPIProvider(),
-                    MultiMoviesProvider(),
-                    AnitakuMediaProvider()
+                    MultiMoviesProvider()
             )
 
     suspend fun invokeExtractors(
@@ -78,8 +75,7 @@ object UltimaMediaProvidersUtils {
         Uqload,
         StreamWish,
         Vidhide,
-        DoodStream,
-        Gogo,
+        MDrive,
         Custom,
         NONE
     }
@@ -186,33 +182,14 @@ object UltimaMediaProvidersUtils {
                         AnyUqload(providerName, dubStatus, domain)
                                 .getUrl(url, domain, subtitleCallback, callback)
                 ServerName.StreamWish ->
-                        AnyStreamwish(providerName, dubStatus, domain)
-                                .getUrl(url, domain, subtitleCallback, callback)
+                    AnyStreamwish(providerName, dubStatus, domain)
+                        .getUrl(url, domain, subtitleCallback, callback)
                 ServerName.Vidhide ->
-                        AnyVidhide(providerName, dubStatus, domain)
-                                .getUrl(url, domain, subtitleCallback, callback)
-                ServerName.DoodStream ->
-                        AnyDoodExtractor(providerName, dubStatus, domain)
-                                .getUrl(url, domain, subtitleCallback, callback)
-                ServerName.Gogo -> {
-                    val name =
-                            (providerName?.let { "$it: " } ?: "")
-                                    .plus("Vidstreaming")
-                                    .plus(dubStatus?.let { ": $it" } ?: "")
-                    val iv = "3134003223491201"
-                    val secretKey = "37911490979715163134003223491201"
-                    val secretDecryptKey = "54674138327930866480207815084989"
-                    GogoHelper.extractVidstream(
-                            url,
-                            name,
-                            callback,
-                            iv,
-                            secretKey,
-                            secretDecryptKey,
-                            isUsingAdaptiveKeys = false,
-                            isUsingAdaptiveData = true
-                    )
-                }
+                    AnyVidhide(providerName, dubStatus, domain)
+                        .getUrl(url, domain, subtitleCallback, callback)
+                ServerName.MDrive ->
+                    AnyMDrive(providerName, dubStatus, domain)
+                        .getUrl(url, domain, subtitleCallback, callback)
                 ServerName.Custom -> {
                     callback.invoke(
                             ExtractorLink(
@@ -262,6 +239,7 @@ class AnyVidplay(provider: String?, dubType: String?, domain: String = "") : Vid
     override val requiresReferer = false
 }
 
+
 class AnyMp4Upload(provider: String?, dubType: String?, domain: String = "") : Mp4Upload() {
     override var name =
             (if (provider != null) "$provider: " else "") +
@@ -289,32 +267,31 @@ class AnyUqload(provider: String?, dubType: String?, domain: String = "") : File
     override val requiresReferer = false
 }
 
-class AnyStreamwish(provider: String?, dubType: String?, domain: String = "") :
-        StreamWishExtractor() {
+class AnyStreamwish(provider: String?, dubType: String?, domain: String = "") : StreamWishExtractor() {
     override var name =
-            (if (provider != null) "$provider: " else "") +
-                    "SteamWish" +
-                    (if (dubType != null) ": $dubType" else "")
+        (if (provider != null) "$provider: " else "") +
+                "SteamWish" +
+                (if (dubType != null) ": $dubType" else "")
     override var mainUrl = domain
     override val requiresReferer = false
 }
 
 class AnyVidhide(provider: String?, dubType: String?, domain: String = "") : VidhideExtractor() {
     override var name =
-            (if (provider != null) "$provider: " else "") +
-                    "Vidhide" +
-                    (if (dubType != null) ": $dubType" else "")
+        (if (provider != null) "$provider: " else "") +
+                "Vidhide" +
+                (if (dubType != null) ": $dubType" else "")
     override var mainUrl = domain
     override val requiresReferer = false
 }
 
-class AnyDoodExtractor(provider: String?, dubType: String?, domain: String = "") :
-        DoodLaExtractor() {
+class AnyMDrive(provider: String?, dubType: String?, domain: String = "") : MoviesDriveProvider.Mdrive() {
     override var name =
-            (if (provider != null) "$provider: " else "") +
-                    "DoodStream" +
-                    (if (dubType != null) ": $dubType" else "")
+        (if (provider != null) "$provider: " else "") +
+                "MDrive" +
+                (if (dubType != null) ": $dubType" else "")
     override var mainUrl = domain
     override val requiresReferer = false
 }
+
 // #endregion - Custom Extractors

@@ -9,7 +9,10 @@ import com.KillerDogeEmpire.UltimaUtils.LinkData
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.apmap
 import com.lagradost.cloudstream3.app
+import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.INFER_TYPE
+import com.lagradost.cloudstream3.utils.loadExtractor
 
 class MoviesDriveProvider : MediaProvider() {
     override val name = "MoviesDrive"
@@ -37,7 +40,7 @@ class MoviesDriveProvider : MediaProvider() {
                         val domain= getBaseUrl(servers)
                         when(domain) {
                             "https://gamerxyt.com"-> UltimaMediaProvidersUtils.commonLinkLoader(
-                                name, Mdrive, servers, null, null, subtitleCallback, callback
+                                name, MDrive, servers, null, null, subtitleCallback, callback
                             )
                         }
                     }
@@ -66,7 +69,7 @@ class MoviesDriveProvider : MediaProvider() {
                                     val domain= getBaseUrl(link)
                                     when(domain) {
                                         "https://gamerxyt.com"-> UltimaMediaProvidersUtils.commonLinkLoader(
-                                            name, Mdrive, link, null, null, subtitleCallback, callback
+                                            name, MDrive, link, null, null, subtitleCallback, callback
                                         )
                                     }
                                 }
@@ -114,6 +117,57 @@ class MoviesDriveProvider : MediaProvider() {
             linklist.add(mainpage)
         }
         return linklist
+    }
+
+// Extractor
+
+    open class Mdrive : ExtractorApi() {
+        override val name: String = "Mdrive"
+        override val mainUrl: String = "https://gamerxyt.com"
+        override val requiresReferer = false
+
+        override suspend fun getUrl(
+            url: String,
+            referer: String?,
+            subtitleCallback: (SubtitleFile) -> Unit,
+            callback: (ExtractorLink) -> Unit
+        ) {
+            val host=url.substringAfter("?").substringBefore("&")
+            val id=url.substringAfter("id=").substringBefore("&")
+            val token=url.substringAfter("token=").substringBefore("&")
+            val Cookie="$host; hostid=$id; hosttoken=$token"
+            val doc = app.get("$mainUrl/games/",headers = mapOf("Cookie" to Cookie)).document
+            val links = doc.select("div.card-body > h2 > a").attr("href")
+            val header = doc.selectFirst("div.card-header")?.text()
+            if (links.contains("pixeldrain"))
+            {
+                callback.invoke(
+                    ExtractorLink(
+                        "MovieDrive",
+                        "PixelDrain",
+                        links,
+                        referer = links,
+                        quality = UltimaMediaProvidersUtils.getIndexQuality(header),
+                        type = INFER_TYPE
+                    )
+                )
+            }else
+                if (links.contains("gofile")) {
+                    loadExtractor(links, subtitleCallback, callback)
+                }
+                else {
+                    callback.invoke(
+                        ExtractorLink(
+                            "MovieDrive",
+                            "MovieDrive",
+                            links,
+                            referer = "",
+                            quality = UltimaMediaProvidersUtils.getIndexQuality(header),
+                            type = INFER_TYPE
+                        )
+                    )
+                }
+        }
     }
 
 }
