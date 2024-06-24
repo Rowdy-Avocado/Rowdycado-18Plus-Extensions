@@ -1,5 +1,6 @@
 package com.rowdyCSExtensions
 
+import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
@@ -86,7 +87,7 @@ class MyFlixer(val plugin: MyFlixerPlugin) : MainAPI() {
                                     newEpisode(epId) {
                                         this.name = epName
                                         this.episode = epNum.toInt()
-                                        this.season = seasonNum.replace("Series","").trim().toInt()
+                                        this.season = seasonNum.replace("Series", "").trim().toInt()
                                         this.data = "servers/" + epId
                                     }
                             )
@@ -117,7 +118,19 @@ class MyFlixer(val plugin: MyFlixerPlugin) : MainAPI() {
             val linkId =
                     if (server.attr("data-linkid").isNullOrEmpty()) server.attr("data-id")
                     else server.attr("data-linkid")
-            val source = app.get("$mainUrl/ajax/episode/sources/$linkId").parsedSafe<Source>()
+            val header =
+                    mapOf(
+                            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64; rv:105.0) Gecko/20100101 Firefox/105.0"
+                                    // "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+                            "X-Requested-With" to "XMLHttpRequest"
+                    )
+            val test =
+                    app.get(
+                            "https://megacloud.tv/embed-1/ajax/e-1/getSources?id=VGCVumztnllw&v=32609&h=54df31bb766d7a0f55c924d7e6619de2a3880fc0&b=1878522368",
+                            headers = header
+                    )
+            Log.d("rowdy", test.text)
+            val source = test.parsedSafe<Source>()
             if (source?.link.toString().contains("megacloud.tv/embed-1"))
                     Megacloud2().getUrl(source?.link.toString(), null, subtitleCallback, callback)
             else loadExtractor(source?.link.toString(), subtitleCallback, callback)

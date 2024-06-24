@@ -4,7 +4,7 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.2.1")
 }
 // use an integer for version numbers
-version = 4
+version = 5
 
 
 cloudstream {
@@ -20,7 +20,7 @@ cloudstream {
     * 2: Slow
     * 3: Beta only
     * */
-    status = 1
+    status = 0
 
     tvTypes = listOf("Movies", "TV Series")
 
